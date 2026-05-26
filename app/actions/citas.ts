@@ -2,6 +2,88 @@
 
 import { prisma } from "@/lib/prisma";
 import { CitaSchema } from "@/lib/validations/citas";
+import { revalidatePath } from "next/cache";
+
+export async function getCitasForWeek(startDateStr: string, medicoId?: string) {
+  try {
+    const startDate = new Date(startDateStr);
+    startDate.setHours(0, 0, 0, 0);
+
+    // Calcular el fin de la semana (Viernes 23:59:59)
+    // Asumiendo que startDate es Lunes, sumamos 5 días para obtener el Sábado 00:00:00 (límite exclusivo)
+    const endDate = new Date(startDate.getTime());
+    endDate.setDate(startDate.getDate() + 5);
+
+    const whereClause: any = {
+      fechaHora: {
+        gte: startDate,
+        lt: endDate
+      },
+      estado: { in: ['PROGRAMADA', 'COMPLETADA'] }
+    };
+
+    if (medicoId && medicoId !== 'ALL') {
+      whereClause.medicoId = medicoId;
+    }
+
+    const citas = await prisma.cita.findMany({
+      where: whereClause,
+      include: {
+        paciente: true,
+        medico: {
+          include: {
+            user: true
+          }
+        },
+        box: true
+      },
+      orderBy: {
+        fechaHora: 'asc'
+      }
+    });
+
+    return { data: citas, error: null };
+  } catch (error) {
+    console.error("Error fetching citas:", error);
+    return { data: [], error: "No se pudieron obtener las citas" };
+  }
+}
+
+export async function getPacientesList() {
+  try {
+    const pacientes = await prisma.paciente.findMany({
+      select: {
+        id: true,
+        nombre: true,
+        apellido: true,
+        contacto: true,
+      },
+      orderBy: {
+        nombre: 'asc'
+      }
+    });
+    return { data: pacientes, error: null };
+  } catch (error) {
+    console.error("Error fetching pacientes list:", error);
+    return { data: [], error: "No se pudieron obtener los pacientes" };
+  }
+}
+
+export async function cancelarCita(citaId: string) {
+  try {
+    await prisma.cita.update({
+      where: { id: citaId },
+      data: { estado: 'CANCELADA' }
+    });
+    
+    revalidatePath("/agenda");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error) {
+    console.error("Error cancelling cita:", error);
+    return { error: "No se pudo cancelar la cita" };
+  }
+}
 
 export async function createCita(formData: FormData) {
   const rawData = {
@@ -46,22 +128,43 @@ export async function createCita(formData: FormData) {
       };
     }
 
+    // Resolver usuarioId dinámicamente para evitar violaciones de clave foránea
+    let usuarioId = "TODO-CURRENT-USER";
+    const firstUser = await prisma.user.findFirst();
+    if (firstUser) {
+      usuarioId = firstUser.id;
+    } else {
+      const defaultUser = await prisma.user.create({
+        data: {
+          email: "esteban.peralta@example.com",
+          passwordHash: "dummy-password",
+          rol: "DOCTOR",
+          nombre: "Dr. Esteban Peralta"
+        }
+      });
+      usuarioId = defaultUser.id;
+    }
+
     // 2. Insertar cita
     const newCita = await prisma.cita.create({
       data: {
         pacienteId: data.pacienteId,
         medicoId: data.medicoId,
         boxId: data.boxId,
-        usuarioId: "TODO-CURRENT-USER", // TODO: Replace with auth session ID
+        usuarioId: usuarioId,
         motivo: data.motivo,
         fechaHora: targetDate,
         estado: 'PROGRAMADA',
       }
     });
 
+    revalidatePath("/agenda");
+    revalidatePath("/");
+    
     return { success: true, data: newCita };
   } catch (error) {
     console.error("Error creating cita:", error);
     return { error: "Ocurrió un error en el servidor al agendar la cita." };
   }
 }
+
