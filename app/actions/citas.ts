@@ -75,7 +75,7 @@ export async function cancelarCita(citaId: string) {
       where: { id: citaId },
       data: { estado: 'CANCELADA' }
     });
-    
+
     revalidatePath("/agenda");
     revalidatePath("/");
     return { success: true };
@@ -122,7 +122,7 @@ export async function createCita(formData: FormData) {
     });
 
     if (conflictingCita) {
-      return { 
+      return {
         error: "Overbooking: Este Consultorio (Box) ya está reservado o en uso cerca de esa hora.",
         conflictingCita
       };
@@ -160,13 +160,14 @@ export async function createCita(formData: FormData) {
 
     revalidatePath("/agenda");
     revalidatePath("/");
-    
+
     return { success: true, data: newCita };
   } catch (error) {
     console.error("Error creating cita:", error);
     return { error: "Ocurrió un error en el servidor al agendar la cita." };
   }
 }
+
 
 export async function getCitasToday() {
   try {
@@ -215,12 +216,11 @@ export async function completarCita(citaId: string) {
     revalidatePath("/atencion");
     revalidatePath("/agenda");
     revalidatePath("/");
-    
+
     return { success: true };
   } catch (error) {
     console.error("Error completing appointment:", error);
     return { error: "No se pudo marcar la cita como completada" };
   }
 }
-
 
