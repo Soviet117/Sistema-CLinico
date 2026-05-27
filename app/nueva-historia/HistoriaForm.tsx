@@ -14,6 +14,7 @@ interface Paciente {
   tipoSangre: string | null;
   alergias: string | null;
   antecedentes: string | null;
+  contacto: string | null;
 }
 
 interface Doctor {
@@ -44,6 +45,7 @@ export default function HistoriaForm({ pacientes, doctores }: HistoriaFormProps)
   const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [genero, setGenero] = useState('MASCULINO');
   const [tipoSangre, setTipoSangre] = useState('O+');
+  const [contacto, setContacto] = useState('');
   const [alergias, setAlergias] = useState('');
   const [antecedentes, setAntecedentes] = useState('');
 
@@ -59,6 +61,7 @@ export default function HistoriaForm({ pacientes, doctores }: HistoriaFormProps)
         setFechaNacimiento(new Date(patient.fechaNacimiento).toISOString().split('T')[0]);
         setGenero(patient.genero);
         setTipoSangre(patient.tipoSangre || 'O+');
+        setContacto(patient.contacto || '');
         setAlergias(patient.alergias || '');
         setAntecedentes(patient.antecedentes || '');
       }
@@ -69,6 +72,7 @@ export default function HistoriaForm({ pacientes, doctores }: HistoriaFormProps)
       setFechaNacimiento('');
       setGenero('MASCULINO');
       setTipoSangre('O+');
+      setContacto('');
       setAlergias('');
       setAntecedentes('');
     }
@@ -140,7 +144,7 @@ export default function HistoriaForm({ pacientes, doctores }: HistoriaFormProps)
             {state.errors?.apellido && <span style={{ color: 'red', fontSize: '0.85rem' }}>{state.errors.apellido.join(', ')}</span>}
           </div>
 
-          <div className="form-grid-3" style={{ gap: '1.25rem', gridColumn: '1 / -1' }}>
+          <div className="form-grid-4" style={{ gap: '1.25rem', gridColumn: '1 / -1' }}>
             <div className="form-group">
               <label htmlFor="fechaNacimiento" className="form-label">Fecha Nacimiento <span>*</span></label>
               <input 
@@ -198,6 +202,20 @@ export default function HistoriaForm({ pacientes, doctores }: HistoriaFormProps)
                 <option value="AB-">AB-</option>
               </select>
               {state.errors?.tipoSangre && <span style={{ color: 'red', fontSize: '0.85rem' }}>{state.errors.tipoSangre.join(', ')}</span>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="contacto" className="form-label">Contacto / Teléfono</label>
+              <input 
+                id="contacto"
+                name="contacto"
+                type="text" 
+                className="form-control" 
+                placeholder="Ej. +51 987654321"
+                value={contacto}
+                onChange={(e) => setContacto(e.target.value)}
+              />
+              {state.errors?.contacto && <span style={{ color: 'red', fontSize: '0.85rem' }}>{state.errors.contacto.join(', ')}</span>}
             </div>
           </div>
         </div>

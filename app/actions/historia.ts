@@ -13,6 +13,7 @@ export type FormState = {
     fechaNacimiento?: string[];
     genero?: string[];
     tipoSangre?: string[];
+    contacto?: string[];
     presionArt?: string[];
     pulso?: string[];
     temperatura?: string[];
@@ -36,6 +37,7 @@ export async function createHistoriaClinica(prevState: FormState, formData: Form
     fechaNacimiento: formData.get("fechaNacimiento"),
     genero: formData.get("genero"),
     tipoSangre: formData.get("tipoSangre"),
+    contacto: formData.get("contacto"),
     alergias: formData.get("alergias"),
     antecedentes: formData.get("antecedentes"),
     presionArt: formData.get("presionArt"),
@@ -91,11 +93,31 @@ export async function createHistoriaClinica(prevState: FormState, formData: Form
             fechaNacimiento: new Date(data.fechaNacimiento!),
             genero: data.genero as any, // Mapeado desde el enum
             tipoSangre: data.tipoSangre || null,
+            contacto: data.contacto || null,
             alergias: data.alergias || null,
             antecedentes: data.antecedentes || null,
           },
         });
         finalPacienteId = newPaciente.id;
+      } else {
+        // Si el paciente ya existe, actualizamos su información de contacto si ha cambiado.
+        const existingPaciente = await tx.paciente.findUnique({
+          where: { id: finalPacienteId },
+          select: { contacto: true }
+        });
+        
+        if (existingPaciente) {
+          const currentContact = existingPaciente.contacto || "";
+          const newContact = data.contacto || "";
+          if (currentContact !== newContact) {
+            await tx.paciente.update({
+              where: { id: finalPacienteId },
+              data: {
+                contacto: data.contacto || null
+              }
+            });
+          }
+        }
       }
 
       // 2. Crear Historia Clínica asociada

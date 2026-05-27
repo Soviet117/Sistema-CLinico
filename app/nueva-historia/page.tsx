@@ -16,6 +16,7 @@ export default async function NewHistoryPage() {
       tipoSangre: true,
       alergias: true,
       antecedentes: true,
+      contacto: true,
     }
   });
 

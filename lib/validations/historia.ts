@@ -13,6 +13,13 @@ export const HistoriaClinicaSchema = z.object({
   fechaNacimiento: z.string().optional(),
   genero: GeneroEnum.optional(),
   tipoSangre: z.string().optional(),
+  contacto: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || /^\+?[0-9\s-]{7,15}$/.test(val),
+      "El contacto debe ser un teléfono válido (entre 7 y 15 dígitos)"
+    ),
   alergias: z.string().optional(),
   antecedentes: z.string().optional(),
 
