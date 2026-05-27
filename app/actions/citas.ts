@@ -168,3 +168,59 @@ export async function createCita(formData: FormData) {
   }
 }
 
+export async function getCitasToday() {
+  try {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const citas = await prisma.cita.findMany({
+      where: {
+        fechaHora: {
+          gte: startOfDay,
+          lt: endOfDay
+        },
+        estado: { in: ['PROGRAMADA', 'COMPLETADA'] }
+      },
+      include: {
+        paciente: true,
+        medico: {
+          include: {
+            user: true
+          }
+        },
+        box: true
+      },
+      orderBy: {
+        fechaHora: 'asc'
+      }
+    });
+
+    return { data: citas, error: null };
+  } catch (error) {
+    console.error("Error fetching today's appointments:", error);
+    return { data: [], error: "No se pudieron obtener las citas de hoy" };
+  }
+}
+
+export async function completarCita(citaId: string) {
+  try {
+    await prisma.cita.update({
+      where: { id: citaId },
+      data: { estado: 'COMPLETADA' }
+    });
+
+    revalidatePath("/atencion");
+    revalidatePath("/agenda");
+    revalidatePath("/");
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Error completing appointment:", error);
+    return { error: "No se pudo marcar la cita como completada" };
+  }
+}
+
+
