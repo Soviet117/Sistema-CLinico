@@ -25,6 +25,7 @@ enum Genero {
 
 enum EstadoCita {
   PROGRAMADA
+  EN_CURSO
   COMPLETADA
   CANCELADA
 }
@@ -144,27 +145,28 @@ model HistoriaClinica {
 
 // Modelo Cita para gestión de agenda
 model Cita {
-  id         String     @id @default(uuid())
-  fechaHora  DateTime
-  motivo     String
-  estado     EstadoCita @default(PROGRAMADA)
+  id              String     @id @default(uuid())
+  fechaHoraInicio DateTime
+  fechaHoraFin    DateTime
+  motivo          String
+  estado          EstadoCita @default(PROGRAMADA)
 
   // Relación con Paciente
-  pacienteId String
-  paciente   Paciente   @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  pacienteId      String
+  paciente        Paciente   @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
 
   // Quién agendó la cita
-  usuarioId  String
-  usuario    User       @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  usuarioId       String
+  usuario         User       @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
 
-  // Médico asignado a la cita
-  medicoId   String?
-  medico     Medico?    @relation(fields: [medicoId], references: [id], onDelete: SetNull)
+  // Médico asignado a la cita (Obligatorio)
+  medicoId        String
+  medico          Medico     @relation(fields: [medicoId], references: [id], onDelete: Restrict)
 
-  // Box asignado a la cita
-  boxId      String?
-  box        Box?       @relation(fields: [boxId], references: [id], onDelete: SetNull)
+  // Box asignado a la cita (Obligatorio)
+  boxId           String
+  box             Box        @relation(fields: [boxId], references: [id], onDelete: Restrict)
 
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }
