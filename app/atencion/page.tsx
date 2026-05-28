@@ -5,13 +5,19 @@ import KanbanAtencion from './KanbanAtencion';
 export const dynamic = 'force-dynamic';
 
 export default async function AtencionPage() {
-  // Configurar las fechas para HOY
-  const today = new Date();
-  const startOfDay = new Date(today);
-  startOfDay.setHours(0, 0, 0, 0);
+  // Configurar las fechas para HOY en el huso horario local de la clínica (UTC-5)
+  const UTC_OFFSET_MS = -5 * 60 * 60 * 1000;
+  const localDate = new Date(Date.now() + UTC_OFFSET_MS);
 
-  const endOfDay = new Date(today);
-  endOfDay.setHours(23, 59, 59, 999);
+  const startOfDayLocal = new Date(Date.UTC(
+    localDate.getUTCFullYear(),
+    localDate.getUTCMonth(),
+    localDate.getUTCDate(),
+    0, 0, 0, 0
+  ));
+
+  const startOfDay = new Date(startOfDayLocal.getTime() - UTC_OFFSET_MS);
+  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
 
   // Consultar las citas del día actual
   const citas = await prisma.cita.findMany({
@@ -31,11 +37,10 @@ export default async function AtencionPage() {
   const citasKanban = citas.map(c => ({
     id: c.id,
     pacienteNombre: `${c.paciente.nombre} ${c.paciente.apellido}`,
-    horaLlegada: c.fechaHoraInicio.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     medicoAsignado: `Dr. ${c.medico.user.nombre}`,
     motivo: c.motivo,
     estado: c.estado,
-    rawInicio: c.fechaHoraInicio
+    rawInicioISO: c.fechaHoraInicio.toISOString()
   }));
 
   return (

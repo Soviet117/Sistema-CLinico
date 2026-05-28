@@ -6,11 +6,10 @@ import { updateEstadoCita } from '@/app/actions/agenda';
 type CitaKanban = {
   id: string;
   pacienteNombre: string;
-  horaLlegada: string;
   medicoAsignado: string;
   motivo: string;
   estado: string;
-  rawInicio: Date;
+  rawInicioISO: string;
 };
 
 interface Props {
@@ -51,6 +50,16 @@ const COLUMNAS = [
 ];
 
 export default function KanbanAtencion({ citasIniciales }: Props) {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const formatTime = (isoString: string) => {
+    if (!mounted) return '...';
+    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   const [optimisticCitas, addOptimisticCita] = useOptimistic(
     citasIniciales,
     (state, { id, nuevoEstado }: { id: string, nuevoEstado: string }) =>
@@ -128,7 +137,7 @@ export default function KanbanAtencion({ citasIniciales }: Props) {
       {/* Tablero Kanban */}
       <div className="kanban-board">
         {COLUMNAS.map(col => {
-          const tarjetas = optimisticCitas.filter(p => p.estado === col.id).sort((a, b) => a.rawInicio.getTime() - b.rawInicio.getTime());
+          const tarjetas = optimisticCitas.filter(p => p.estado === col.id).sort((a, b) => new Date(a.rawInicioISO).getTime() - new Date(b.rawInicioISO).getTime());
 
           return (
             <div key={col.id} className="kanban-column" style={{ borderTop: `3px solid ${col.color}` }}>
@@ -161,7 +170,7 @@ export default function KanbanAtencion({ citasIniciales }: Props) {
                     <div className="kanban-card-meta">
                       <span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: '3px' }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                        Hora Citada: {p.horaLlegada}
+                        Hora Citada: {formatTime(p.rawInicioISO)}
                       </span>
                       <span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: '3px' }}><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
