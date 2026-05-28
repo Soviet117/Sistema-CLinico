@@ -8,7 +8,9 @@ import {
   deleteMedico, 
   createBox, 
   deleteBox, 
-  updateBoxState 
+  updateBoxState,
+  createEspecialidad,
+  deleteEspecialidad
 } from '@/app/actions/infraestructura';
 
 interface Medico {
@@ -30,12 +32,19 @@ interface Box {
   estado: "DISPONIBLE" | "OCUPADO" | "MANTENIMIENTO";
 }
 
+interface Especialidad {
+  id: string;
+  nombre: string;
+  precioBase: number;
+}
+
 interface MedicosManagerProps {
   medicos: Medico[];
   boxes: Box[];
+  especialidades: Especialidad[];
 }
 
-export default function MedicosManager({ medicos, boxes }: MedicosManagerProps) {
+export default function MedicosManager({ medicos, boxes, especialidades }: MedicosManagerProps) {
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -43,7 +52,7 @@ export default function MedicosManager({ medicos, boxes }: MedicosManagerProps) 
   const [showMedicoForm, setShowMedicoForm] = useState(false);
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
-  const [especialidad, setEspecialidad] = useState('');
+  const [especialidad, setEspecialidad] = useState(''); // Contiene el especialidadId seleccionado
   const [numColegiatura, setNumColegiatura] = useState('');
 
   // Form Box
@@ -51,13 +60,19 @@ export default function MedicosManager({ medicos, boxes }: MedicosManagerProps) 
   const [boxNombre, setBoxNombre] = useState('');
   const [boxTipo, setBoxTipo] = useState('');
   const [boxCapacidad, setBoxCapacidad] = useState(1);
+  const [boxEspecialidadId, setBoxEspecialidadId] = useState('');
+
+  // Form Especialidad
+  const [showEspForm, setShowEspForm] = useState(false);
+  const [espNombre, setEspNombre] = useState('');
+  const [espPrecioBase, setEspPrecioBase] = useState('0.00');
 
   const handleAddMedico = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData();
     formData.append("nombre", nombre);
     formData.append("email", email);
-    formData.append("especialidad", especialidad);
+    formData.append("especialidadId", especialidad);
     formData.append("numColegiatura", numColegiatura);
 
     startTransition(async () => {
@@ -81,6 +96,7 @@ export default function MedicosManager({ medicos, boxes }: MedicosManagerProps) 
     formData.append("nombre", boxNombre);
     formData.append("tipo", boxTipo);
     formData.append("capacidad", boxCapacidad.toString());
+    formData.append("especialidadId", boxEspecialidadId);
 
     startTransition(async () => {
       setErrorMsg(null);
@@ -91,8 +107,37 @@ export default function MedicosManager({ medicos, boxes }: MedicosManagerProps) 
         setBoxNombre('');
         setBoxTipo('');
         setBoxCapacidad(1);
+        setBoxEspecialidadId('');
         setShowBoxForm(false);
       }
+    });
+  };
+
+  const handleAddEspecialidad = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("nombre", espNombre);
+    formData.append("precioBase", espPrecioBase);
+
+    startTransition(async () => {
+      setErrorMsg(null);
+      const res = await createEspecialidad(formData);
+      if (res.error) {
+        setErrorMsg(res.error);
+      } else {
+        setEspNombre('');
+        setEspPrecioBase('0.00');
+        setShowEspForm(false);
+      }
+    });
+  };
+
+  const handleDeleteEspecialidad = (espId: string) => {
+    if (!confirm("¿Está seguro de que desea eliminar esta especialidad? Esto podría afectar a los médicos y consultorios vinculados.")) return;
+    startTransition(async () => {
+      setErrorMsg(null);
+      const res = await deleteEspecialidad(espId);
+      if (res?.error) setErrorMsg(res.error);
     });
   };
 
@@ -180,8 +225,18 @@ export default function MedicosManager({ medicos, boxes }: MedicosManagerProps) 
                   <input type="email" className="form-control" value={email} onChange={e => setEmail(e.target.value)} required />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Especialidad</label>
-                  <input type="text" className="form-control" placeholder="Ej: Cardiología" value={especialidad} onChange={e => setEspecialidad(e.target.value)} required />
+                  <label className="form-label">Especialidad del Médico</label>
+                  <select 
+                    className="form-control" 
+                    value={especialidad} 
+                    onChange={e => setEspecialidad(e.target.value)} 
+                    required
+                  >
+                    <option value="">-- SELECCIONE ESPECIALIDAD --</option>
+                    {especialidades.map(esp => (
+                      <option key={esp.id} value={esp.id}>{esp.nombre} (${esp.precioBase.toFixed(2)})</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Nº Colegiatura</label>
@@ -251,97 +306,186 @@ export default function MedicosManager({ medicos, boxes }: MedicosManagerProps) 
           </Card>
         </div>
 
-        {/* Sección Boxes */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Boxes / Consultorios</h2>
-            <button 
-              className="btn btn-primary btn-sm"
-              onClick={() => setShowBoxForm(!showBoxForm)}
-            >
-              {showBoxForm ? "Cancelar" : "+ Registrar Box"}
-            </button>
-          </div>
+        {/* Sección Boxes y Especialidades */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          
+          {/* Sección Boxes */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Boxes / Consultorios</h2>
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={() => setShowBoxForm(!showBoxForm)}
+              >
+                {showBoxForm ? "Cancelar" : "+ Registrar Box"}
+              </button>
+            </div>
 
-          {showBoxForm && (
-            <Card title="Nuevo Consultorio (Box)">
-              <form onSubmit={handleAddBox} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div className="form-group">
-                  <label className="form-label">Identificador / Nombre</label>
-                  <input type="text" className="form-control" placeholder="Ej: Box 102 o Rayos X" value={boxNombre} onChange={e => setBoxNombre(e.target.value)} required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Tipo / Especialidad del Box</label>
-                  <input type="text" className="form-control" placeholder="Ej: General, Pediatría, Odontología" value={boxTipo} onChange={e => setBoxTipo(e.target.value)} required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Capacidad de Atención</label>
-                  <input type="number" className="form-control" min={1} value={boxCapacidad} onChange={e => setBoxCapacidad(parseInt(e.target.value) || 1)} required />
-                </div>
-                <button type="submit" className="btn btn-primary" disabled={isPending}>
-                  {isPending ? "Registrando..." : "Guardar Consultorio"}
-                </button>
-              </form>
-            </Card>
-          )}
-
-          <Card title="Listado de Consultorios" subtitle="Mapa de infraestructura física">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {boxes.map(box => (
-                <div 
-                  key={box.id} 
-                  style={{
-                    padding: '1rem',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.75rem',
-                    backgroundColor: box.estado === 'DISPONIBLE' ? 'rgba(16,185,129,0.05)' : box.estado === 'MANTENIMIENTO' ? 'rgba(245,158,11,0.05)' : 'rgba(239,68,68,0.05)'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <h4 style={{ margin: 0, fontWeight: 700 }}>{box.nombre}</h4>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--secondary-light)' }}>{box.tipo} (Capacidad: {box.capacidad})</span>
-                    </div>
-                    <span className={`badge ${box.estado === 'DISPONIBLE' ? 'badge-estable' : box.estado === 'MANTENIMIENTO' ? 'badge-observacion' : 'badge-critico'}`}>
-                      {box.estado}
-                    </span>
+            {showBoxForm && (
+              <Card title="Nuevo Consultorio (Box)">
+                <form onSubmit={handleAddBox} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Identificador / Nombre</label>
+                    <input type="text" className="form-control" placeholder="Ej: Box 102 o Rayos X" value={boxNombre} onChange={e => setBoxNombre(e.target.value)} required />
                   </div>
-
-                  <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
+                  <div className="form-group">
+                    <label className="form-label">Tipo del Box (Infraestructura)</label>
+                    <input type="text" className="form-control" placeholder="Ej: Consultorio, Sala de Procedimientos" value={boxTipo} onChange={e => setBoxTipo(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Especialidad Asignada al Box</label>
                     <select 
                       className="form-control" 
-                      style={{ width: '130px', padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                      value={box.estado}
-                      onChange={e => handleBoxStateChange(box.id, e.target.value as any)}
-                      disabled={isPending}
+                      value={boxEspecialidadId} 
+                      onChange={e => setBoxEspecialidadId(e.target.value)} 
+                      required
                     >
-                      <option value="DISPONIBLE">Disponible</option>
-                      <option value="OCUPADO">Ocupado</option>
-                      <option value="MANTENIMIENTO">Mantenimiento</option>
+                      <option value="">-- SELECCIONE ESPECIALIDAD --</option>
+                      {especialidades.map(esp => (
+                        <option key={esp.id} value={esp.id}>{esp.nombre}</option>
+                      ))}
                     </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Capacidad de Atención</label>
+                    <input type="number" className="form-control" min={1} value={boxCapacidad} onChange={e => setBoxCapacidad(parseInt(e.target.value) || 1)} required />
+                  </div>
+                  <button type="submit" className="btn btn-primary" disabled={isPending}>
+                    {isPending ? "Registrando..." : "Guardar Consultorio"}
+                  </button>
+                </form>
+              </Card>
+            )}
+
+            <Card title="Listado de Consultorios" subtitle="Mapa de infraestructura física">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {boxes.map(box => (
+                  <div 
+                    key={box.id} 
+                    style={{
+                      padding: '1rem',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.75rem',
+                      backgroundColor: box.estado === 'DISPONIBLE' ? 'rgba(16,185,129,0.05)' : box.estado === 'MANTENIMIENTO' ? 'rgba(245,158,11,0.05)' : 'rgba(239,68,68,0.05)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h4 style={{ margin: 0, fontWeight: 700 }}>{box.nombre}</h4>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--secondary-light)' }}>{box.tipo} (Capacidad: {box.capacidad})</span>
+                      </div>
+                      <span className={`badge ${box.estado === 'DISPONIBLE' ? 'badge-estable' : box.estado === 'MANTENIMIENTO' ? 'badge-observacion' : box.estado === 'MANTENIMIENTO' ? 'badge-observacion' : 'badge-critico'}`}>
+                        {box.estado}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
+                      <select 
+                        className="form-control" 
+                        style={{ width: '130px', padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                        value={box.estado}
+                        onChange={e => handleBoxStateChange(box.id, e.target.value as any)}
+                        disabled={isPending}
+                      >
+                        <option value="DISPONIBLE">Disponible</option>
+                        <option value="OCUPADO">Ocupado</option>
+                        <option value="MANTENIMIENTO">Mantenimiento</option>
+                      </select>
+                      
+                      <button 
+                        className="btn btn-outline btn-sm"
+                        style={{ color: 'var(--color-critico)', borderColor: 'var(--color-critico)', padding: '0.25rem 0.55rem', fontSize: '0.72rem' }}
+                        onClick={() => handleDeleteBox(box.id)}
+                        disabled={isPending}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {boxes.length === 0 && (
+                  <div style={{ textAlign: 'center', color: 'var(--secondary-light)', padding: '1.5rem' }}>
+                    No hay consultorios registrados.
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+
+          {/* Sección Especialidades */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Especialidades y Tarifas</h2>
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={() => setShowEspForm(!showEspForm)}
+              >
+                {showEspForm ? "Cancelar" : "+ Registrar Especialidad"}
+              </button>
+            </div>
+
+            {showEspForm && (
+              <Card title="Nueva Especialidad">
+                <form onSubmit={handleAddEspecialidad} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Nombre de Especialidad / Servicio</label>
+                    <input type="text" className="form-control" placeholder="Ej: Pediatría, Cardiología, Dental" value={espNombre} onChange={e => setEspNombre(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Precio de Consulta Base ($)</label>
+                    <input type="number" step="0.01" min="0" className="form-control" value={espPrecioBase} onChange={e => setEspPrecioBase(e.target.value)} required />
+                  </div>
+                  <button type="submit" className="btn btn-primary" disabled={isPending}>
+                    {isPending ? "Registrando..." : "Guardar Especialidad"}
+                  </button>
+                </form>
+              </Card>
+            )}
+
+            <Card title="Listado de Especialidades" subtitle="Precios base y catálogo activo">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {especialidades.map(esp => (
+                  <div 
+                    key={esp.id} 
+                    style={{
+                      padding: '1rem',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                    }}
+                  >
+                    <div>
+                      <h4 style={{ margin: 0, fontWeight: 700 }}>{esp.nombre}</h4>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--secondary-light)', fontWeight: 600 }}>Precio Base: ${esp.precioBase.toFixed(2)}</span>
+                    </div>
                     
                     <button 
                       className="btn btn-outline btn-sm"
                       style={{ color: 'var(--color-critico)', borderColor: 'var(--color-critico)', padding: '0.25rem 0.55rem', fontSize: '0.72rem' }}
-                      onClick={() => handleDeleteBox(box.id)}
+                      onClick={() => handleDeleteEspecialidad(esp.id)}
                       disabled={isPending}
                     >
                       Eliminar
                     </button>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {boxes.length === 0 && (
-                <div style={{ textAlign: 'center', color: 'var(--secondary-light)', padding: '1.5rem' }}>
-                  No hay consultorios registrados.
-                </div>
-              )}
-            </div>
-          </Card>
+                {especialidades.length === 0 && (
+                  <div style={{ textAlign: 'center', color: 'var(--secondary-light)', padding: '1.5rem' }}>
+                    No hay especialidades registradas.
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+
         </div>
 
       </div>

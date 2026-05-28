@@ -137,12 +137,35 @@ export async function createHistoriaClinica(prevState: FormState, formData: Form
         },
       });
 
-      // 3. Actualizar el estado de la cita a 'COMPLETADA' si provenimos de la sala de espera
+      // 3. Actualizar el estado de la cita a 'COMPLETADA' y generar Factura si aplica
       if (data.citaId) {
         await tx.cita.update({
           where: { id: data.citaId },
           data: { estado: 'COMPLETADA' }
         });
+
+        // FACTURACIÓN AUTOMÁTICA
+        // Obtenemos el precio de la especialidad asignada al box donde se atendió
+        const citaConDetalles = await tx.cita.findUnique({
+          where: { id: data.citaId },
+          include: {
+            box: {
+              include: { especialidad: true }
+            }
+          }
+        });
+
+        if (citaConDetalles?.box?.especialidad) {
+          // Generamos la factura inmutable usando el precioBase actual del catálogo
+          await tx.factura.create({
+            data: {
+              montoTotal: citaConDetalles.box.especialidad.precioBase,
+              estadoPago: 'PENDIENTE',
+              citaId: data.citaId,
+              pacienteId: finalPacienteId,
+            }
+          });
+        }
       }
     });
 

@@ -1,15 +1,21 @@
 import React from 'react';
 import { getMedicos, getBoxes } from '@/app/actions/infraestructura';
+import { prisma } from '@/lib/prisma';
 import MedicosManager from './MedicosManager';
 
 export default async function MedicosPage() {
   const medicosRes = await getMedicos();
   const boxesRes = await getBoxes();
 
+  // Obtener especialidades del catálogo para poblar los formularios
+  const especialidades = await prisma.especialidad.findMany({
+    orderBy: { nombre: 'asc' }
+  });
+
   // Mapear tipos correctos para la interfaz
   const medicos = (medicosRes.data || []).map((m: any) => ({
     id: m.id,
-    especialidad: m.especialidad,
+    especialidad: m.especialidad?.nombre || "Sin Especialidad",
     numColegiatura: m.numColegiatura,
     estado: m.estado,
     user: {
@@ -22,7 +28,7 @@ export default async function MedicosPage() {
     id: b.id,
     nombre: b.nombre,
     capacidad: b.capacidad,
-    tipo: b.tipo,
+    tipo: `${b.tipo} (${b.especialidad?.nombre || 'Sin Especialidad'})`,
     estado: b.estado
   }));
 
@@ -37,7 +43,11 @@ export default async function MedicosPage() {
         </p>
       </div>
 
-      <MedicosManager medicos={medicos} boxes={boxes} />
+      <MedicosManager medicos={medicos} boxes={boxes} especialidades={especialidades.map(e => ({
+        id: e.id,
+        nombre: e.nombre,
+        precioBase: Number(e.precioBase)
+      }))} />
     </div>
   );
 }

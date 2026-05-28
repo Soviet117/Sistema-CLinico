@@ -41,6 +41,32 @@ enum EstadoBox {
   MANTENIMIENTO
 }
 
+enum EstadoPago {
+  PENDIENTE
+  PAGADO
+  ANULADA
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TARJETA
+  TRANSFERENCIA
+}
+
+// Modelo Especialidad (Catálogo de Precios y Áreas)
+model Especialidad {
+  id         String   @id @default(uuid())
+  nombre     String   @unique
+  precioBase Decimal  @db.Decimal(10, 2)
+
+  // Relaciones
+  medicos    Medico[]
+  boxes      Box[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
 // Modelo User para autenticación básica
 model User {
   id           String   @id @default(uuid())
@@ -60,9 +86,12 @@ model User {
 // Modelo Medico
 model Medico {
   id             String       @id @default(uuid())
-  especialidad   String
   numColegiatura String       @unique
   estado         EstadoMedico @default(ACTIVO)
+
+  // Relación con Especialidad
+  especialidadId String
+  especialidad   Especialidad @relation(fields: [especialidadId], references: [id], onDelete: Restrict)
 
   // Relación con User
   userId         String       @unique
@@ -83,6 +112,10 @@ model Box {
   capacidad  Int        @default(1)
   tipo       String     
   estado     EstadoBox  @default(DISPONIBLE)
+
+  // Especialidad asignada al Box
+  especialidadId String
+  especialidad   Especialidad @relation(fields: [especialidadId], references: [id], onDelete: Restrict)
 
   citas      Cita[]
   historias  HistoriaClinica[]
@@ -107,6 +140,7 @@ model Paciente {
   // Relaciones inversas (1:N)
   historiasClinicas HistoriaClinica[]
   citas            Cita[]
+  facturas         Factura[]
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -167,6 +201,29 @@ model Cita {
   boxId           String
   box             Box        @relation(fields: [boxId], references: [id], onDelete: Restrict)
 
+  // Relación opcional con Factura (1 a 1 inversa)
+  factura         Factura?
+
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
+}
+
+// Modelo Factura (Gestión Financiera)
+model Factura {
+  id            String      @id @default(uuid())
+  montoTotal    Decimal     @db.Decimal(10, 2)
+  estadoPago    EstadoPago  @default(PENDIENTE)
+  metodoPago    MetodoPago?
+  fechaEmision  DateTime    @default(now())
+
+  // Relación con Cita (1:1 mandatoria desde Factura, cascada si Cita se borra)
+  citaId        String      @unique
+  cita          Cita        @relation(fields: [citaId], references: [id], onDelete: Cascade)
+
+  // Relación con Paciente
+  pacienteId    String
+  paciente      Paciente    @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }

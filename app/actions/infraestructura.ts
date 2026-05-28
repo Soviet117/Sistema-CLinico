@@ -8,6 +8,7 @@ export async function getMedicos() {
     const medicos = await prisma.medico.findMany({
       include: {
         user: true,
+        especialidad: true,
       },
       orderBy: {
         user: { nombre: 'asc' }
@@ -23,10 +24,10 @@ export async function getMedicos() {
 export async function createMedico(formData: FormData) {
   const nombre = formData.get("nombre") as string;
   const email = formData.get("email") as string;
-  const especialidad = formData.get("especialidad") as string;
+  const especialidadId = formData.get("especialidadId") as string;
   const numColegiatura = formData.get("numColegiatura") as string;
 
-  if (!nombre || !email || !especialidad || !numColegiatura) {
+  if (!nombre || !email || !especialidadId || !numColegiatura) {
     return { error: "Todos los campos son obligatorios" };
   }
 
@@ -55,7 +56,7 @@ export async function createMedico(formData: FormData) {
 
       await tx.medico.create({
         data: {
-          especialidad,
+          especialidadId,
           numColegiatura,
           userId: user.id
         }
@@ -114,6 +115,9 @@ export async function deleteMedico(medicoId: string) {
 export async function getBoxes() {
   try {
     const boxes = await prisma.box.findMany({
+      include: {
+        especialidad: true,
+      },
       orderBy: { nombre: 'asc' }
     });
     return { data: boxes, error: null };
@@ -127,9 +131,10 @@ export async function createBox(formData: FormData) {
   const nombre = formData.get("nombre") as string;
   const tipo = formData.get("tipo") as string;
   const capacidad = parseInt(formData.get("capacidad") as string || "1", 10);
+  const especialidadId = formData.get("especialidadId") as string;
 
-  if (!nombre || !tipo) {
-    return { error: "El nombre y el tipo del consultorio son obligatorios" };
+  if (!nombre || !tipo || !especialidadId) {
+    return { error: "Todos los campos son obligatorios" };
   }
 
   try {
@@ -143,7 +148,8 @@ export async function createBox(formData: FormData) {
         nombre,
         tipo,
         capacidad,
-        estado: "DISPONIBLE"
+        estado: "DISPONIBLE",
+        especialidadId,
       }
     });
 
@@ -180,3 +186,44 @@ export async function updateBoxState(boxId: string, newState: "DISPONIBLE" | "OC
     return { success: false, error: "No se pudo actualizar el estado del consultorio" };
   }
 }
+
+export async function createEspecialidad(formData: FormData) {
+  const nombre = formData.get("nombre") as string;
+  const precioBase = parseFloat(formData.get("precioBase") as string || "0");
+
+  if (!nombre || isNaN(precioBase) || precioBase < 0) {
+    return { error: "El nombre y un precio base válido son obligatorios" };
+  }
+
+  try {
+    const existing = await prisma.especialidad.findUnique({ where: { nombre } });
+    if (existing) {
+      return { error: "Ya existe esta especialidad en el catálogo" };
+    }
+
+    await prisma.especialidad.create({
+      data: {
+        nombre,
+        precioBase
+      }
+    });
+
+    revalidatePath("/medicos");
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating especialidad:", error);
+    return { error: "Error en el servidor al crear la especialidad" };
+  }
+}
+
+export async function deleteEspecialidad(especialidadId: string) {
+  try {
+    await prisma.especialidad.delete({ where: { id: especialidadId } });
+    revalidatePath("/medicos");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting especialidad:", error);
+    return { error: "No se puede eliminar la especialidad si tiene médicos o boxes vinculados a ella." };
+  }
+}
+
