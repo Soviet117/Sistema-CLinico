@@ -396,6 +396,11 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
                 <input type="text" name="motivo" className="form-control" placeholder="Ej. Chequeo Rutina, Dolor Abdominal..." required />
               </div>
 
+              <div>
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Adelanto a Cobrar (CLP) <span style={{ color: 'var(--secondary-light)', fontWeight: 'normal' }}>(Opcional)</span></label>
+                <input type="number" name="montoAdelanto" className="form-control" placeholder="Ej. 10000" min="0" defaultValue="0" />
+              </div>
+
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setModalMode('NONE')}>Cancelar</button>
                 <button type="submit" className="btn btn-primary" disabled={isPending}>

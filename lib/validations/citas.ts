@@ -11,6 +11,7 @@ export const CitaSchema = z.object({
   fechaHoraFin: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Fecha de fin inválida",
   }),
+  montoAdelanto: z.coerce.number().min(0, "El adelanto no puede ser negativo").optional(),
 }).refine((data) => {
   const start = new Date(data.fechaHoraInicio).getTime();
   const end = new Date(data.fechaHoraFin).getTime();

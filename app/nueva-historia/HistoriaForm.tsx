@@ -377,6 +377,19 @@ export default function HistoriaForm({ pacientes, doctores }: HistoriaFormProps)
             </select>
             {state.errors?.doctorId && <span style={{ color: 'red', fontSize: '0.85rem' }}>{state.errors.doctorId.join(', ')}</span>}
           </div>
+
+          <div className="form-group">
+            <label htmlFor="precioFinal" className="form-label">Precio Base Especialidad (CLP)</label>
+            <input 
+              id="precioFinal"
+              name="precioFinal"
+              type="number" 
+              className="form-control" 
+              placeholder="Ej. Modificar precio si aplica (dejar vacío para mantener original)"
+              min="0"
+            />
+            {state.errors?.precioFinal && <span style={{ color: 'red', fontSize: '0.85rem' }}>{state.errors.precioFinal.join(', ')}</span>}
+          </div>
         </div>
       </Card>
 

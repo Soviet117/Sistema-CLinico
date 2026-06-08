@@ -12,6 +12,7 @@ export type FormStateAgenda = {
     motivo?: string[];
     fechaHoraInicio?: string[];
     fechaHoraFin?: string[];
+    montoAdelanto?: string[];
     _form?: string[];
   };
   message?: string | null;
@@ -26,6 +27,7 @@ export async function createCita(prevState: FormStateAgenda, formData: FormData)
     motivo: formData.get("motivo"),
     fechaHoraInicio: formData.get("fechaHoraInicio"),
     fechaHoraFin: formData.get("fechaHoraFin"),
+    montoAdelanto: formData.get("montoAdelanto"),
   };
 
   const validatedFields = CitaSchema.safeParse(rawData);
@@ -38,7 +40,7 @@ export async function createCita(prevState: FormStateAgenda, formData: FormData)
     };
   }
 
-  const { pacienteId, medicoId, boxId, motivo, fechaHoraInicio, fechaHoraFin } = validatedFields.data;
+  const { pacienteId, medicoId, boxId, motivo, fechaHoraInicio, fechaHoraFin, montoAdelanto } = validatedFields.data;
 
   const start = new Date(fechaHoraInicio);
   const end = new Date(fechaHoraFin);
@@ -95,7 +97,7 @@ export async function createCita(prevState: FormStateAgenda, formData: FormData)
     }
 
     // 2. Crear Cita
-    await prisma.cita.create({
+    const nuevaCita = await prisma.cita.create({
       data: {
         pacienteId: finalPacienteId,
         medicoId,
@@ -104,6 +106,27 @@ export async function createCita(prevState: FormStateAgenda, formData: FormData)
         fechaHoraInicio: start,
         fechaHoraFin: end,
         usuarioId: adminUser.id,
+      }
+    });
+
+    // 3. Crear Factura PENDIENTE con adelanto y obtener precio base
+    const boxDetalle = await prisma.box.findUnique({
+      where: { id: boxId },
+      include: { especialidad: true }
+    });
+
+    const precioBase = boxDetalle?.especialidad?.precioBase || 0;
+    const adelantoNum = Number(montoAdelanto) || 0;
+
+    await prisma.factura.create({
+      data: {
+        montoBase: precioBase,
+        montoAdelanto: adelantoNum,
+        montoTotal: precioBase, // Initially total is just the base price, wait, or wait until historia? No, total is base price for now.
+        estadoPago: 'PENDIENTE',
+        citaId: nuevaCita.id,
+        pacienteId: finalPacienteId,
+        categoria: 'Consulta',
       }
     });
 

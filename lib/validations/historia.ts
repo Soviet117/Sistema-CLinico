@@ -52,6 +52,9 @@ export const HistoriaClinicaSchema = z.object({
 
   // Médico tratante
   doctorId: z.string().min(1, "Debe seleccionar un médico tratante"),
+  
+  // Facturación
+  precioFinal: z.coerce.number().min(0, "El precio base no puede ser negativo").optional(),
 }).superRefine((data, ctx) => {
   // Si el pacienteId es "new", todos los campos de nuevo paciente son obligatorios
   if (data.pacienteId === "new") {

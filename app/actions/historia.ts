@@ -50,6 +50,7 @@ export async function createHistoriaClinica(prevState: FormState, formData: Form
     diagnostico: formData.get("diagnostico"),
     tratamiento: formData.get("tratamiento"),
     doctorId: formData.get("doctorId"),
+    precioFinal: formData.get("precioFinal"),
   };
 
   // Validar con Zod
@@ -144,27 +145,25 @@ export async function createHistoriaClinica(prevState: FormState, formData: Form
           data: { estado: 'COMPLETADA' }
         });
 
-        // FACTURACIÓN AUTOMÁTICA
-        // Obtenemos el precio de la especialidad asignada al box donde se atendió
-        const citaConDetalles = await tx.cita.findUnique({
-          where: { id: data.citaId },
-          include: {
-            box: {
-              include: { especialidad: true }
-            }
-          }
-        });
+        // FACTURACIÓN: Actualizar la factura existente creada en Agenda
+        // Se permite modificar el precio base de la especialidad usando 'precioFinal'
+        const precioFinalNumber = data.precioFinal;
 
-        if (citaConDetalles?.box?.especialidad) {
-          // Generamos la factura inmutable usando el precioBase actual del catálogo
-          await tx.factura.create({
-            data: {
-              montoTotal: citaConDetalles.box.especialidad.precioBase,
-              estadoPago: 'PENDIENTE',
-              citaId: data.citaId,
-              pacienteId: finalPacienteId,
-            }
+        if (precioFinalNumber !== undefined && precioFinalNumber !== null) {
+          // Obtener la factura para asegurarse de que existe y actualizarla
+          const facturaExistente = await tx.factura.findUnique({
+            where: { citaId: data.citaId }
           });
+
+          if (facturaExistente) {
+            await tx.factura.update({
+              where: { citaId: data.citaId },
+              data: {
+                montoBase: precioFinalNumber,
+                montoTotal: precioFinalNumber, // Set total as new modified base
+              }
+            });
+          }
         }
       }
     });

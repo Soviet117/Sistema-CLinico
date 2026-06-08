@@ -1,24 +1,23 @@
-"use client";
-
 import React from 'react';
 import Card from '@/components/Card';
-import { mockFacturas, mockFacturacionStats } from '@/lib/mockData';
+import { getFacturacionDashboardData } from '@/app/actions/facturacion';
 
 const formatCLP = (val: number) =>
   new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(val);
 
-export default function FacturacionPage() {
-  const stats = mockFacturacionStats;
-  const facturas = mockFacturas;
+export default async function FacturacionPage() {
+  const { data, error } = await getFacturacionDashboardData();
 
-  const handleNuevaFactura = () => {
-    alert('Nueva factura\n(Funcionalidad en desarrollo)');
-  };
+  if (error || !data) {
+    return (
+      <div className="card text-center p-8">
+        <h2 style={{ color: 'var(--color-critico)' }}>Error cargando datos de facturación</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
 
-  const handleDescargar = (id: string) => {
-    console.log(`Descargar factura ${id}`);
-    alert(`Descargando factura ${id}...`);
-  };
+  const { stats, facturas } = data;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -79,10 +78,9 @@ export default function FacturacionPage() {
         {/* Tabla de Facturas */}
         <Card title="Últimas Facturas del Día" subtitle="Registro de transacciones de la jornada actual">
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-            <button className="btn btn-primary" onClick={handleNuevaFactura}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Nueva Factura
-            </button>
+            <span style={{ fontSize: '0.9rem', color: 'var(--secondary-color)' }}>
+              ({facturas.length} registros)
+            </span>
           </div>
           <div className="table-responsive">
             <table className="clinical-table">
@@ -118,13 +116,17 @@ export default function FacturacionPage() {
                       </span>
                     </td>
                     <td>
-                      <button
-                        className="btn btn-outline"
-                        style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem' }}
-                        onClick={() => handleDescargar(f.id)}
-                      >
-                        Descargar
-                      </button>
+                      <form action={async () => {
+                        "use server";
+                        // Future implementation for downloading or paying
+                      }}>
+                        <button
+                          className="btn btn-outline"
+                          style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem' }}
+                        >
+                          Ver
+                        </button>
+                      </form>
                     </td>
                   </tr>
                 ))}
@@ -148,7 +150,7 @@ export default function FacturacionPage() {
                 </div>
               </div>
               <div style={{ fontSize: '0.8rem', color: 'var(--secondary-light)', textAlign: 'center' }}>
-                {facturas.filter(f => f.estado === 'PAGADA').length} de {facturas.length} facturas cobradas
+                {stats.totalPagadas} de {stats.totalFacturas} facturas cobradas en su totalidad
               </div>
             </div>
           </Card>
