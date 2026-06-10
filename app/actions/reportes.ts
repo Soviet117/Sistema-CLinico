@@ -21,7 +21,7 @@ export async function getReporteCitas(filtros: FiltrosReporte) {
         lte: new Date(filtros.fechaFin),
       };
     } else if (filtros.fechaInicio) {
-        whereClause.fechaHoraInicio = { gte: new Date(filtros.fechaInicio) };
+      whereClause.fechaHoraInicio = { gte: new Date(filtros.fechaInicio) };
     }
 
     if (filtros.medicoId && filtros.medicoId !== "ALL") {
@@ -36,8 +36,8 @@ export async function getReporteCitas(filtros: FiltrosReporte) {
       where: whereClause,
       include: {
         paciente: { select: { nombre: true, apellido: true } },
-        medico: { 
-            include: { user: { select: { nombre: true } }, especialidad: { select: { nombre: true } } }
+        medico: {
+          include: { user: { select: { nombre: true } }, especialidad: { select: { nombre: true } } }
         },
       },
       orderBy: { fechaHoraInicio: 'desc' },
@@ -46,7 +46,7 @@ export async function getReporteCitas(filtros: FiltrosReporte) {
     const totalCitas = citas.length;
     const citasCompletadas = citas.filter(c => c.estado === 'COMPLETADA').length;
     const citasCanceladas = citas.filter(c => c.estado === 'CANCELADA').length;
-    
+
     const tasaCancelacion = totalCitas > 0 ? ((citasCanceladas / totalCitas) * 100).toFixed(1) : 0;
 
     const mappedData = citas.map(c => ({
@@ -149,12 +149,12 @@ export async function getReporteFinanciero(filtros: FiltrosReporte) {
     });
 
     const ingresosTotales = facturas
-        .filter(f => f.estadoPago === 'PAGADO')
-        .reduce((sum, f) => sum + Number(f.montoTotal), 0);
-        
+      .filter(f => f.estadoPago === 'PAGADO')
+      .reduce((sum, f) => sum + Number(f.montoTotal), 0);
+
     const montosPendientes = facturas
-        .filter(f => f.estadoPago === 'PENDIENTE')
-        .reduce((sum, f) => sum + Number(f.montoTotal), 0);
+      .filter(f => f.estadoPago === 'PENDIENTE')
+      .reduce((sum, f) => sum + Number(f.montoTotal), 0);
 
     const mappedData = facturas.map(f => ({
       id: f.id,
@@ -183,15 +183,15 @@ export async function getReporteFinanciero(filtros: FiltrosReporte) {
 
 // Opciones para los filtros
 export async function getOpcionesFiltros() {
-    try {
-        const medicos = await prisma.medico.findMany({
-            include: { user: { select: { nombre: true } } }
-        });
-        
-        return {
-            medicos: medicos.map(m => ({ value: m.id, label: m.user?.nombre || "Desconocido" }))
-        };
-    } catch (e) {
-        return { medicos: [] };
-    }
+  try {
+    const medicos = await prisma.medico.findMany({
+      include: { user: { select: { nombre: true } } }
+    });
+
+    return {
+      medicos: medicos.map(m => ({ value: m.id, label: m.user?.nombre || "Desconocido" }))
+    };
+  } catch (e) {
+    return { medicos: [] };
+  }
 }

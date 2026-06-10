@@ -41,15 +41,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="app-wrapper">
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)} 
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
       <div className="main-content">
-        <Header 
-          onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} 
-          title={title} 
-          subtitle={subtitle} 
+        <Header
+          onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+          title={title}
+          subtitle={subtitle}
         />
         <main className="page-container">
           {children}
