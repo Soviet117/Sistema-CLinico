@@ -1,5 +1,6 @@
 import './globals.css'
 import DashboardLayout from '@/components/DashboardLayout'
+import ThemeProvider from '@/components/ThemeProvider'
 
 export const metadata = {
   title: 'MediHist - Sistema de Gestión Clínica',
@@ -12,11 +13,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body>
-        <DashboardLayout>
-          {children}
-        </DashboardLayout>
+        <ThemeProvider>
+          <DashboardLayout>
+            {children}
+          </DashboardLayout>
+        </ThemeProvider>
       </body>
     </html>
   )

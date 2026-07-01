@@ -174,11 +174,11 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
       {/* Controles Superiores */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
         {/* Leyenda Visual */}
-        <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.8rem', padding: '0.75rem', backgroundColor: 'white', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--primary-light)', border: '2px solid var(--primary-color)' }}></span> Programada</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#fef3c7', border: '2px solid #d97706' }}></span> En Curso</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#d1fae5', border: '2px solid #059669' }}></span> Completada</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--secondary-light)' }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#f1f5f9', border: '2px solid #64748b' }}></span> Cancelada</div>
+        <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.8rem', padding: '0.75rem', backgroundColor: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--secondary-color)' }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--primary-light)', border: '2px solid var(--primary-color)' }}></span> Programada</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--secondary-color)' }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-en-curso-bg)', border: '2px solid var(--color-en-curso-text)' }}></span> En Curso</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--secondary-color)' }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-completada-bg)', border: '2px solid var(--color-completada-text)' }}></span> Completada</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--secondary-light)' }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-cancelada-bg)', border: '2px solid var(--color-cancelada-text)' }}></span> Cancelada</div>
         </div>
 
         <button 
@@ -204,7 +204,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
       <Card title="Calendario Semanal" subtitle="Haz clic en un bloque de 30 minutos para agendar una cita al instante">
         <div style={{ display: 'grid', gridTemplateColumns: `80px repeat(${days.length}, 1fr)`, gap: '1px', backgroundColor: 'var(--border-color)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
           {/* Encabezados de Días */}
-          <div style={{ backgroundColor: 'white', padding: '10px' }}></div>
+          <div style={{ backgroundColor: 'var(--bg-app)', padding: '10px' }}></div>
           {days.map((d, dayIdx) => {
             const date = getTargetDateForDayIndex(dayIdx);
             const isToday = date.getTime() === new Date(new Date().setHours(0,0,0,0)).getTime();
@@ -230,7 +230,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
           {hours.map(h => (
             <React.Fragment key={h}>
               <div style={{ 
-                backgroundColor: '#f8fafc', 
+                backgroundColor: 'var(--bg-app)', 
                 padding: '10px', 
                 textAlign: 'right', 
                 fontSize: '0.85rem', 
@@ -239,8 +239,8 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'flex-end',
-                borderBottom: '2px solid #cbd5e1',
-                borderRight: '1px solid #e2e8f0'
+                borderBottom: '2px solid var(--border-color)',
+                borderRight: '1px solid var(--border-color)'
               }}>
                 {h}:00
               </div>
@@ -253,7 +253,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
                     style={{ 
                       flex: 1, 
                       minHeight: '45px', 
-                      borderBottom: mins === 0 ? '1px dashed #e2e8f0' : 'none',
+                      borderBottom: mins === 0 ? '1px dashed var(--border-color)' : 'none',
                       padding: '4px',
                       cursor: 'pointer',
                       transition: 'background-color 0.2s ease',
@@ -261,18 +261,18 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
                       flexDirection: 'column',
                       gap: '4px'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-slot-hover)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     onClick={(e) => {
                       if (e.target === e.currentTarget) handleCellClick(dayIdx, h, mins);
                     }}
                   >
                      {citas.map(c => {
-                        let bgColor = 'var(--primary-light)';
-                        let textColor = 'var(--primary-color)';
-                        if (c.estado === 'EN_CURSO') { bgColor = '#fef3c7'; textColor = '#d97706'; } // Amber
-                        if (c.estado === 'COMPLETADA') { bgColor = '#d1fae5'; textColor = '#059669'; } // Emerald
-                        if (c.estado === 'CANCELADA') { bgColor = '#f1f5f9'; textColor = '#64748b'; } // Slate
+                         let bgColor = 'var(--primary-light)';
+                         let textColor = 'var(--primary-color)';
+                         if (c.estado === 'EN_CURSO') { bgColor = 'var(--color-en-curso-bg)'; textColor = 'var(--color-en-curso-text)'; }
+                         if (c.estado === 'COMPLETADA') { bgColor = 'var(--color-completada-bg)'; textColor = 'var(--color-completada-text)'; }
+                         if (c.estado === 'CANCELADA') { bgColor = 'var(--color-cancelada-bg)'; textColor = 'var(--color-cancelada-text)'; }
 
                         return (
                           <div key={c.id} 
@@ -303,9 +303,9 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
                   <div 
                     key={dayIdx} 
                     style={{ 
-                      backgroundColor: 'white', 
-                      borderLeft: '1px solid #f1f5f9',
-                      borderBottom: '2px solid #cbd5e1',
+                      backgroundColor: 'var(--bg-card)', 
+                      borderLeft: '1px solid var(--border-color)',
+                      borderBottom: '2px solid var(--border-color)',
                       display: 'flex',
                       flexDirection: 'column'
                     }}
@@ -328,7 +328,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           animation: 'fadeIn 0.2s ease-out'
         }}>
-          <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '16px', width: '95%', maxWidth: '700px', boxShadow: 'var(--shadow-lg)' }}>
+          <div style={{ backgroundColor: 'var(--bg-card)', padding: '2rem', borderRadius: '16px', width: '95%', maxWidth: '700px', boxShadow: 'var(--shadow-lg)' }}>
             <h2 style={{ marginBottom: '0.5rem', color: 'var(--secondary-color)', fontSize: '1.25rem', fontWeight: 700 }}>Agendar Nueva Cita</h2>
             <p style={{ color: 'var(--secondary-light)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>Complete los datos para confirmar la asistencia del paciente.</p>
             
@@ -344,11 +344,11 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Hora Inicio</label>
-                  <input type="datetime-local" name="fechaHoraInicio" className="form-control" defaultValue={selectedSlot.inicio} required style={{ backgroundColor: '#f8fafc' }} />
+                  <input type="datetime-local" name="fechaHoraInicio" className="form-control" defaultValue={selectedSlot.inicio} required />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Hora Fin</label>
-                  <input type="datetime-local" name="fechaHoraFin" className="form-control" defaultValue={selectedSlot.fin} required style={{ backgroundColor: '#f8fafc' }} />
+                  <input type="datetime-local" name="fechaHoraFin" className="form-control" defaultValue={selectedSlot.fin} required />
                 </div>
               </div>
 
@@ -437,14 +437,14 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           animation: 'fadeIn 0.2s ease-out'
         }}>
-          <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '16px', width: '95%', maxWidth: '500px', boxShadow: 'var(--shadow-lg)' }}>
+          <div style={{ backgroundColor: 'var(--bg-card)', padding: '2rem', borderRadius: '16px', width: '95%', maxWidth: '500px', boxShadow: 'var(--shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
               <div>
                 <h2 style={{ color: 'var(--secondary-color)', fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Detalles de la Cita</h2>
                 <span style={{ 
                   display: 'inline-block', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600, marginTop: '0.5rem',
-                  backgroundColor: selectedCita.estado === 'PROGRAMADA' ? 'var(--primary-light)' : selectedCita.estado === 'EN_CURSO' ? '#fef3c7' : selectedCita.estado === 'COMPLETADA' ? '#d1fae5' : '#f1f5f9',
-                  color: selectedCita.estado === 'PROGRAMADA' ? 'var(--primary-color)' : selectedCita.estado === 'EN_CURSO' ? '#d97706' : selectedCita.estado === 'COMPLETADA' ? '#059669' : '#64748b'
+                  backgroundColor: selectedCita.estado === 'PROGRAMADA' ? 'var(--primary-light)' : selectedCita.estado === 'EN_CURSO' ? 'var(--color-en-curso-bg)' : selectedCita.estado === 'COMPLETADA' ? 'var(--color-completada-bg)' : 'var(--color-cancelada-bg)',
+                  color: selectedCita.estado === 'PROGRAMADA' ? 'var(--primary-color)' : selectedCita.estado === 'EN_CURSO' ? 'var(--color-en-curso-text)' : selectedCita.estado === 'COMPLETADA' ? 'var(--color-completada-text)' : 'var(--color-cancelada-text)'
                 }}>
                   {selectedCita.estado}
                 </span>
@@ -480,7 +480,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
 
               <div>
                 <strong style={{ display: 'block', color: 'var(--secondary-light)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Motivo de Consulta</strong>
-                <div style={{ padding: '0.5rem', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '0.25rem' }}>
+                  <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg-app)', borderRadius: '6px', border: '1px solid var(--border-color)', marginTop: '0.25rem' }}>
                   {selectedCita.motivo || 'Sin motivo especificado'}
                 </div>
               </div>
@@ -495,7 +495,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
               {selectedCita.estado !== 'CANCELADA' && (
                 <button 
                   onClick={() => handleUpdateEstado(selectedCita.id, 'CANCELADA')}
-                  style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #ef4444', color: '#ef4444', backgroundColor: '#fef2f2', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem' }}
+                  className="btn btn-danger btn-sm"
                   disabled={isPending}
                 >
                   Cancelar Cita
@@ -504,7 +504,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
               {selectedCita.estado === 'PROGRAMADA' && (
                 <button 
                   onClick={() => handleUpdateEstado(selectedCita.id, 'EN_CURSO')}
-                  style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #f59e0b', color: '#b45309', backgroundColor: '#fffbeb', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem' }}
+                  style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--color-en-curso-text)', color: 'var(--color-en-curso-text)', backgroundColor: 'var(--color-en-curso-bg)', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem' }}
                   disabled={isPending}
                 >
                   Marcar En Curso
@@ -513,7 +513,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
               {(selectedCita.estado === 'PROGRAMADA' || selectedCita.estado === 'EN_CURSO') && (
                 <button 
                   onClick={() => handleUpdateEstado(selectedCita.id, 'COMPLETADA')}
-                  style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: 'none', color: 'white', backgroundColor: '#10b981', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem', boxShadow: '0 1px 2px rgba(16, 185, 129, 0.2)' }}
+                  style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: 'none', color: 'white', backgroundColor: 'var(--color-completada-text)', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem', boxShadow: '0 1px 2px rgba(5, 150, 105, 0.2)' }}
                   disabled={isPending}
                 >
                   Finalizar

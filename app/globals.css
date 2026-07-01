@@ -32,6 +32,15 @@
   --border-color: #e2e8f0;        /* Slate 200 */
   --border-focus: #38bdf8;        /* Sky 400 */
   
+  /* Estados de Citas (Agenda) */
+  --color-en-curso-bg: #fef3c7;
+  --color-en-curso-text: #d97706;
+  --color-completada-bg: #d1fae5;
+  --color-completada-text: #059669;
+  --color-cancelada-bg: #f1f5f9;
+  --color-cancelada-text: #64748b;
+  --color-slot-hover: #f8fafc;
+
   /* Tipografía y Espaciado */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --radius-sm: 8px;
@@ -1653,4 +1662,278 @@ textarea.form-control {
   font-size: 0.75rem;
   color: var(--secondary-light);
   margin-top: 0.15rem;
+}
+
+/* ==========================================
+   MODO OSCURO (DARK MODE)
+   ========================================== */
+
+.dark {
+  --primary-light: #1e3a5f;
+  --primary-glow: rgba(56, 189, 248, 0.2);
+  --secondary-color: #f1f5f9;
+  --secondary-light: #94a3b8;
+  --accent-light: #134e4a;
+  --bg-app: #0f172a;
+  --bg-sidebar: #1e293b;
+  --bg-card: #1e293b;
+  --border-color: #334155;
+  --border-focus: #38bdf8;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  --color-en-curso-bg: rgba(217, 119, 6, 0.2);
+  --color-en-curso-text: #fdba74;
+  --color-completada-bg: rgba(5, 150, 105, 0.2);
+  --color-completada-text: #6ee7b7;
+  --color-cancelada-bg: rgba(100, 116, 139, 0.2);
+  --color-cancelada-text: #94a3b8;
+  --color-slot-hover: rgba(248, 250, 252, 0.04);
+}
+
+.dark body {
+  background-color: var(--bg-app);
+  color: var(--secondary-color);
+}
+
+.dark .sidebar {
+  background-color: var(--bg-sidebar);
+}
+
+.dark .sidebar-logo .logo-text {
+  color: var(--secondary-color);
+}
+
+.dark .nav-link:hover {
+  background-color: rgba(248, 250, 252, 0.05);
+}
+
+.dark .doctor-badge {
+  background-color: var(--primary-light);
+}
+
+.dark .header {
+  background-color: var(--bg-card);
+}
+
+.dark .header-search input {
+  background-color: var(--bg-app);
+  color: var(--secondary-color);
+}
+
+.dark .header-search input:focus {
+  background-color: var(--bg-card);
+}
+
+.dark .btn-icon {
+  color: var(--secondary-light);
+}
+
+.dark .btn-icon:hover {
+  background-color: rgba(248, 250, 252, 0.05);
+}
+
+.dark .profile-dropdown:hover {
+  background-color: rgba(248, 250, 252, 0.05);
+}
+
+.dark .profile-avatar {
+  background-color: var(--primary-light);
+}
+
+.dark .card {
+  background-color: var(--bg-card);
+}
+
+.dark .card-header {
+  border-bottom-color: var(--border-color);
+}
+
+.dark .kpi-icon-wrapper[style*="background-color"] {
+  background-color: var(--primary-light) !important;
+}
+
+.dark .clinical-table {
+  background-color: var(--bg-card);
+}
+
+.dark .clinical-table th {
+  background-color: rgba(15, 23, 42, 0.4);
+  color: var(--secondary-light);
+  border-bottom-color: var(--border-color);
+}
+
+.dark .clinical-table td {
+  color: var(--secondary-color);
+  border-bottom-color: var(--border-color);
+}
+
+.dark .clinical-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.dark .form-control {
+  background-color: var(--bg-app);
+  color: var(--secondary-color);
+  border-color: var(--border-color);
+}
+
+.dark .form-control:focus {
+  background-color: var(--bg-card);
+}
+
+.dark .form-label {
+  color: var(--secondary-color);
+}
+
+.dark .btn-secondary {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--secondary-light);
+}
+
+.dark .btn-secondary:hover {
+  background-color: rgba(248, 250, 252, 0.05);
+  color: var(--secondary-color);
+}
+
+.dark .btn-outline {
+  border-color: var(--border-color);
+  color: var(--secondary-light);
+}
+
+.dark .btn-outline:hover {
+  background-color: rgba(248, 250, 252, 0.05);
+  border-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.dark .kanban-column {
+  background-color: rgba(15, 23, 42, 0.4);
+}
+
+.dark .kanban-column-header {
+  border-bottom-color: var(--border-color);
+}
+
+.dark .kanban-column-count {
+  background-color: var(--border-color);
+  color: var(--secondary-light);
+}
+
+.dark .kanban-card {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+.dark .kanban-card:hover {
+  border-color: var(--primary-color);
+}
+
+.dark .kanban-card-actions {
+  border-top-color: var(--border-color);
+}
+
+.dark .calendar-grid {
+  background-color: var(--bg-card);
+}
+
+.dark .calendar-header-cell {
+  background-color: rgba(15, 23, 42, 0.4);
+  color: var(--secondary-color);
+  border-bottom-color: var(--border-color);
+  border-right-color: var(--border-color);
+}
+
+.dark .calendar-hour-cell {
+  background-color: rgba(15, 23, 42, 0.4);
+  color: var(--secondary-light);
+  border-bottom-color: var(--border-color);
+  border-right-color: var(--border-color);
+}
+
+.dark .calendar-cell {
+  border-bottom-color: var(--border-color);
+  border-right-color: var(--border-color);
+}
+
+.dark .calendar-cell:hover {
+  background-color: var(--primary-glow);
+}
+
+.dark .patient-avatar-box {
+  background-color: rgba(15, 23, 42, 0.4);
+}
+
+.dark .timeline-body {
+  background-color: rgba(15, 23, 42, 0.4);
+  border-color: var(--border-color);
+}
+
+.dark .timeline::before {
+  background-color: var(--border-color);
+}
+
+.dark .timeline-badge {
+  background-color: var(--bg-card);
+  border-color: var(--primary-color);
+}
+
+.dark .vital-tag {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+.dark .tab-header:hover {
+  background-color: rgba(248, 250, 252, 0.05);
+}
+
+.dark .office-card {
+  border-color: var(--border-color);
+}
+
+.dark .svg-grid-line {
+  stroke: var(--border-color);
+}
+
+.dark .sidebar-overlay {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.dark ::placeholder {
+  color: #64748b;
+}
+
+.dark .page-title {
+  color: var(--secondary-color);
+}
+
+.dark .page-subtitle {
+  color: var(--secondary-light);
+}
+
+.dark .table-responsive {
+  border-color: var(--border-color);
+}
+
+.dark .header-title-container h1 {
+  color: var(--secondary-color);
+}
+
+.dark .header-title-container p {
+  color: var(--secondary-light);
+}
+
+.dark .badge-en-curso {
+  background-color: rgba(234, 88, 12, 0.2);
+  color: #fdba74;
+}
+
+.dark .badge-completada {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+}
+
+.dark .form-section {
+  border-bottom-color: var(--border-color);
 }

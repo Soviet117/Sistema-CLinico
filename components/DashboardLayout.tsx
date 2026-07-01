@@ -37,6 +37,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   } else if (pathname === '/medicos') {
     title = "Médicos y Consultorios";
     subtitle = "Planificación del personal y estado de boxes de consulta";
+  } else if (pathname === '/configuracion') {
+    title = "Configuración";
+    subtitle = "Personalización y administración del sistema";
   }
 
   return (
