@@ -28,7 +28,9 @@ COPY --from=builder /app/package*.json ./
 # Copiar código fuente (bind mount lo sobreescribirá)
 COPY . .
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 3000
 
-# Comando de desarrollo usando scripts del package.json
-CMD ["sh", "-c", "npm run prisma:generate && npm run dev"]
+ENTRYPOINT ["/entrypoint.sh"]

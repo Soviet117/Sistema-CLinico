@@ -1,7 +1,7 @@
-# entrypoint.sh - Se ejecuta antes de iniciar la app
+#!/bin/sh
+set -e
 
-# Ejecutar migraciones de Prisma
+npx prisma generate
 npx prisma migrate deploy
 
-# Iniciar la aplicación
-node server.js
+exec npm run dev

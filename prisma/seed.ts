@@ -86,19 +86,70 @@ async function main() {
 
   console.log('✅ Usuarios y Médicos creados.')
 
-  // 4. Crear un Paciente de Prueba
-  const paciente = await prisma.paciente.create({
-    data: {
-      nombre: 'Carlos',
-      apellido: 'Prueba',
-      fechaNacimiento: new Date('1990-01-01'),
-      genero: Genero.MASCULINO,
-      contacto: '987654321',
-      tipoSangre: 'O+',
-    }
-  })
+  // 4. Crear Pacientes de Prueba
+  const pacientes = await Promise.all([
+    await prisma.paciente.create({
+      data: {
+        nombre: 'Carlos',
+        apellido: 'Prueba',
+        fechaNacimiento: new Date('1990-01-01'),
+        genero: Genero.MASCULINO,
+        contacto: '987654321',
+        tipoSangre: 'O+',
+      }
+    }),
+    await prisma.paciente.create({
+      data: {
+        nombre: 'María',
+        apellido: 'González',
+        fechaNacimiento: new Date('1985-05-15'),
+        genero: Genero.FEMENINO,
+        contacto: '987654322',
+        tipoSangre: 'A+',
+        alergias: 'Penicilina',
+        antecedentes: 'Hipertensión arterial',
+      }
+    }),
+    await prisma.paciente.create({
+      data: {
+        nombre: 'José',
+        apellido: 'Ramírez',
+        fechaNacimiento: new Date('1978-11-08'),
+        genero: Genero.MASCULINO,
+        contacto: '987654323',
+        tipoSangre: 'B-',
+        alergias: 'None',
+        antecedentes: 'Diabetes tipo 2',
+      }
+    }),
+    await prisma.paciente.create({
+      data: {
+        nombre: 'Ana',
+        apellido: 'López',
+        fechaNacimiento: new Date('1992-03-22'),
+        genero: Genero.FEMENINO,
+        contacto: '987654324',
+        tipoSangre: 'O-',
+        alergias: 'Sulfas',
+        antecedentes: 'Asma leve',
+      }
+    }),
+    await prisma.paciente.create({
+      data: {
+        nombre: 'Francisco',
+        apellido: 'Díaz',
+        fechaNacimiento: new Date('1965-09-30'),
+        genero: Genero.OTRO,
+        contacto: '987654325',
+        tipoSangre: 'AB+',
+        alergias: 'None',
+        antecedentes: 'Cardiopatía isquémica',
+      }
+    }),
+  ])
 
-  console.log(`✅ Paciente de prueba creado: ${paciente.nombre} ${paciente.apellido}`)
+  const pacientesCreados = pacientes.map(p => `${p.nombre} ${p.apellido}`).join(', ')
+  console.log(`✅ Pacientes de prueba creados: ${pacientesCreados}`)
   console.log('✨ Base de datos poblada exitosamente (Seed Completado).')
 }
 
