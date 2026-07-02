@@ -39,7 +39,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
   const [isNewPatient, setIsNewPatient] = useState(false);
 
   // Datos para renderizar el Grid Semanal
-  const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+  const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const hours = Array.from({ length: 9 }, (_, i) => i + 9); // 9:00 AM a 5:00 PM
 
   // Helper para calcular la fecha objetivo (si ya pasó, se mueve a la próxima semana)
@@ -218,7 +218,8 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
       </div>
 
       <Card title="Calendario Semanal" subtitle="Haz clic en un bloque de 30 minutos para agendar una cita al instante">
-        <div style={{ display: 'grid', gridTemplateColumns: `80px repeat(${days.length}, 1fr)`, gap: '1px', backgroundColor: 'var(--border-color)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `80px repeat(${days.length}, 1fr)`, gap: '1px', backgroundColor: 'var(--border-color)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', minWidth: '700px' }}>
           {/* Encabezados de Días */}
           <div style={{ backgroundColor: 'var(--bg-app)', padding: '10px' }}></div>
           {days.map((d, dayIdx) => {
@@ -340,6 +341,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
               })}
             </React.Fragment>
           ))}
+        </div>
         </div>
       </Card>
 
