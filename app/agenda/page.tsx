@@ -28,7 +28,8 @@ export default async function AgendaPage() {
       include: {
         paciente: { select: { id: true, nombre: true, apellido: true } },
         medico: { select: { id: true, user: { select: { nombre: true } } } },
-        box: { select: { id: true, nombre: true } }
+        box: { select: { id: true, nombre: true } },
+        factura: { select: { montoTotal: true, montoAdelanto: true, estadoPago: true, estadoAdelanto: true } }
       },
       orderBy: { fechaHoraInicio: 'asc' }
     }),
@@ -45,6 +46,15 @@ export default async function AgendaPage() {
     })
   ]);
 
+  const citasSerialized = citas.map(cita => ({
+    ...cita,
+    factura: cita.factura ? {
+      ...cita.factura,
+      montoTotal: Number(cita.factura.montoTotal),
+      montoAdelanto: Number(cita.factura.montoAdelanto),
+    } : null,
+  }));
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div className="header-title-container" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
@@ -53,7 +63,7 @@ export default async function AgendaPage() {
       </div>
 
       <AgendaCalendario 
-        citasIniciales={citas}
+        citasIniciales={citasSerialized}
         medicos={medicos}
         boxes={boxes}
         pacientes={pacientes}

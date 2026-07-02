@@ -12,6 +12,8 @@ export const CitaSchema = z.object({
     message: "Fecha de fin inválida",
   }),
   montoAdelanto: z.coerce.number().min(0, "El adelanto no puede ser negativo").optional(),
+  metodoAdelanto: z.enum(["EFECTIVO", "TRANSFERENCIA", "YAPE", "PLIN"]).optional(),
+  observacionPago: z.string().max(500, "La observación es demasiado larga").optional(),
 }).refine((data) => {
   const start = new Date(data.fechaHoraInicio).getTime();
   const end = new Date(data.fechaHoraFin).getTime();
@@ -19,4 +21,13 @@ export const CitaSchema = z.object({
 }, {
   message: "La fecha de fin debe ser posterior a la de inicio",
   path: ["fechaHoraFin"]
+}).superRefine((data, ctx) => {
+  const adelanto = Number(data.montoAdelanto) || 0;
+  if (adelanto > 0 && !data.metodoAdelanto) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["metodoAdelanto"],
+      message: "Debe seleccionar el método del adelanto",
+    });
+  }
 });

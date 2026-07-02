@@ -29,6 +29,7 @@ export default async function AtencionPage() {
     include: {
       paciente: { select: { nombre: true, apellido: true } },
       medico: { select: { user: { select: { nombre: true } } } },
+      factura: { select: { montoTotal: true, montoAdelanto: true, estadoPago: true, estadoAdelanto: true } },
     },
     orderBy: { fechaHoraInicio: 'asc' }
   });
@@ -42,7 +43,10 @@ export default async function AtencionPage() {
     medicoAsignado: `Dr. ${c.medico.user.nombre}`,
     motivo: c.motivo,
     estado: c.estado,
-    rawInicioISO: c.fechaHoraInicio.toISOString()
+    rawInicioISO: c.fechaHoraInicio.toISOString(),
+    saldoPendiente: c.factura
+      ? Math.max(Number(c.factura.montoTotal) - (c.factura.estadoAdelanto === 'VALIDADO' ? Number(c.factura.montoAdelanto) : 0), 0)
+      : 0
   }));
 
   return (

@@ -1,9 +1,9 @@
 import React from 'react';
 import Card from '@/components/Card';
-import { getFacturacionDashboardData, registrarPagoFactura } from '@/app/actions/facturacion';
+import { cobrarSaldoFactura, getFacturacionDashboardData, rechazarAdelanto, registrarPagoFactura, validarAdelanto } from '@/app/actions/facturacion';
 
-const formatCLP = (val: number) =>
-  new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(val);
+const formatPEN = (val: number) =>
+  new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN', minimumFractionDigits: 2 }).format(val);
 
 export default async function FacturacionPage() {
   const { data, error } = await getFacturacionDashboardData();
@@ -18,6 +18,8 @@ export default async function FacturacionPage() {
   }
 
   const { stats, facturas } = data;
+  const adelantosPorValidar = facturas.filter(f => f.estadoAdelanto === 'COMPROBANTE_ENVIADO');
+  const saldosPendientes = facturas.filter(f => f.estado !== 'PAGADO' && f.saldoPendiente > 0 && f.citaEstado === 'PENDIENTE_PAGO');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -30,9 +32,9 @@ export default async function FacturacionPage() {
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
           <div className="kpi-info">
-            <span className="kpi-value">{formatCLP(stats.ingresosHoy)}</span>
+            <span className="kpi-value">{formatPEN(stats.ingresosHoy)}</span>
             <span className="kpi-label">Ingresos del Día</span>
-            <span className="kpi-trend up" style={{ color: '#10b981' }}>Hoy 21/05/2026</span>
+            <span className="kpi-trend up" style={{ color: '#10b981' }}>Hoy</span>
           </div>
         </div>
 
@@ -42,7 +44,7 @@ export default async function FacturacionPage() {
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           </div>
           <div className="kpi-info">
-            <span className="kpi-value">{formatCLP(stats.desgloseHoy.consultas)}</span>
+            <span className="kpi-value">{formatPEN(stats.desgloseHoy.consultas)}</span>
             <span className="kpi-label">Consultas</span>
             <span className="kpi-trend" style={{ color: 'var(--secondary-light)' }}>Cobrado hoy</span>
           </div>
@@ -54,7 +56,7 @@ export default async function FacturacionPage() {
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
           <div className="kpi-info">
-            <span className="kpi-value">{formatCLP(stats.desgloseHoy.procedimientos)}</span>
+            <span className="kpi-value">{formatPEN(stats.desgloseHoy.procedimientos)}</span>
             <span className="kpi-label">Procedimientos</span>
             <span className="kpi-trend" style={{ color: 'var(--secondary-light)' }}>Cobrado hoy</span>
           </div>
@@ -66,7 +68,7 @@ export default async function FacturacionPage() {
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <div className="kpi-info">
-            <span className="kpi-value">{formatCLP(stats.cuentasPorCobrar)}</span>
+            <span className="kpi-value">{formatPEN(stats.cuentasPorCobrar)}</span>
             <span className="kpi-label">Cuentas por Cobrar</span>
             <span className="kpi-trend down" style={{ color: 'var(--color-critico)' }}>Pendiente de pago</span>
           </div>
@@ -76,6 +78,111 @@ export default async function FacturacionPage() {
       {/* Desglose + Tasa de pago */}
       <div className="dashboard-grid">
         {/* Tabla de Facturas */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <Card title="Adelantos por Validar" subtitle="Comprobantes enviados por transferencia, Yape o Plin">
+          <div className="table-responsive">
+            <table className="clinical-table">
+              <thead>
+                <tr>
+                  <th>Paciente</th>
+                  <th>Cita</th>
+                  <th>Método</th>
+                  <th>Adelanto</th>
+                  <th>Comprobante</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adelantosPorValidar.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-muted" style={{ textAlign: 'center', padding: '1rem' }}>No hay comprobantes pendientes.</td>
+                  </tr>
+                ) : adelantosPorValidar.map(f => (
+                  <tr key={`adelanto-${f.id}`}>
+                    <td style={{ fontWeight: 600 }}>{f.pacienteName}</td>
+                    <td>{new Date(f.citaFecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                    <td>{f.metodoAdelanto}</td>
+                    <td style={{ color: '#10b981', fontWeight: 700 }}>{formatPEN(f.montoAdelanto)}</td>
+                    <td>
+                      {f.comprobanteUrl ? (
+                        <a href={f.comprobanteUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary-color)', fontWeight: 700 }}>Ver</a>
+                      ) : (
+                        <span className="text-muted">Sin archivo</span>
+                      )}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <form action={async () => {
+                          "use server";
+                          await validarAdelanto(f.id);
+                        }}>
+                          <button type="submit" className="btn btn-primary" style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem' }}>Validar</button>
+                        </form>
+                        <form action={async () => {
+                          "use server";
+                          await rechazarAdelanto(f.id);
+                        }}>
+                          <button type="submit" className="btn btn-danger" style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem' }}>Rechazar</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <Card title="Saldos Pendientes por Cobrar" subtitle="Pacientes que terminaron consulta y deben cancelar antes de salir">
+          <div className="table-responsive">
+            <table className="clinical-table">
+              <thead>
+                <tr>
+                  <th>Paciente</th>
+                  <th>Total</th>
+                  <th>Adelanto Válido</th>
+                  <th>Saldo</th>
+                  <th>Estado Cita</th>
+                  <th>Cobro</th>
+                </tr>
+              </thead>
+              <tbody>
+                {saldosPendientes.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-muted" style={{ textAlign: 'center', padding: '1rem' }}>No hay pacientes retenidos por saldo pendiente.</td>
+                  </tr>
+                ) : saldosPendientes.map(f => (
+                  <tr key={`saldo-${f.id}`}>
+                    <td style={{ fontWeight: 600 }}>{f.pacienteName}</td>
+                    <td>{formatPEN(f.montoTotal)}</td>
+                    <td style={{ color: '#10b981', fontWeight: 700 }}>{formatPEN(f.adelantoValidado)}</td>
+                    <td style={{ color: 'var(--color-critico)', fontWeight: 800 }}>{formatPEN(f.saldoPendiente)}</td>
+                    <td><span className="badge badge-observacion">{f.citaEstado}</span></td>
+                    <td>
+                      <form action={async (formData: FormData) => {
+                        "use server";
+                        const metodo = formData.get("metodo") as "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "YAPE" | "PLIN";
+                        await cobrarSaldoFactura(f.id, metodo);
+                      }} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <select name="metodo" className="form-control" style={{ fontSize: '0.75rem', padding: '0.2rem 0.4rem', height: 'auto', minWidth: '90px' }}>
+                          <option value="EFECTIVO">Efectivo</option>
+                          <option value="TARJETA">Tarjeta</option>
+                          <option value="TRANSFERENCIA">Transf.</option>
+                          <option value="YAPE">Yape</option>
+                          <option value="PLIN">Plin</option>
+                        </select>
+                        <button type="submit" className="btn btn-primary" style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem' }}>
+                          Cobrar y completar
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
         <Card title="Últimas Facturas del Día" subtitle="Registro de transacciones de la jornada actual">
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
             <span style={{ fontSize: '0.9rem', color: 'var(--secondary-color)' }}>
@@ -110,10 +217,10 @@ export default async function FacturacionPage() {
                         {f.categoria}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 700, color: 'var(--secondary-color)' }}>{formatCLP(f.montoTotal)}</td>
-                    <td style={{ color: '#10b981', fontWeight: 600 }}>{formatCLP(f.montoAdelanto)}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--secondary-color)' }}>{formatPEN(f.montoTotal)}</td>
+                    <td style={{ color: '#10b981', fontWeight: 600 }}>{formatPEN(f.adelantoValidado)}</td>
                     <td style={{ color: f.estado === 'PAGADO' ? '#64748b' : 'var(--color-critico)', fontWeight: 700 }}>
-                      {f.estado === 'PAGADO' ? formatCLP(0) : formatCLP(f.montoTotal - f.montoAdelanto)}
+                      {formatPEN(f.saldoPendiente)}
                     </td>
                     <td className="text-muted" style={{ fontSize: '0.85rem' }}>{f.metodoPago}</td>
                     <td>
@@ -125,13 +232,15 @@ export default async function FacturacionPage() {
                       {f.estado === 'PENDIENTE' ? (
                         <form action={async (formData: FormData) => {
                           "use server";
-                          const metodo = formData.get("metodo") as "EFECTIVO" | "TARJETA" | "TRANSFERENCIA";
+                          const metodo = formData.get("metodo") as "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "YAPE" | "PLIN";
                           await registrarPagoFactura(f.id, metodo);
                         }} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                           <select name="metodo" className="form-control" style={{ fontSize: '0.75rem', padding: '0.2rem 0.4rem', height: 'auto', minWidth: '80px' }}>
                             <option value="EFECTIVO">Efectivo</option>
                             <option value="TARJETA">Tarjeta</option>
                             <option value="TRANSFERENCIA">Transf.</option>
+                            <option value="YAPE">Yape</option>
+                            <option value="PLIN">Plin</option>
                           </select>
                           <button
                             type="submit"
@@ -151,6 +260,7 @@ export default async function FacturacionPage() {
             </table>
           </div>
         </Card>
+        </div>
 
         {/* Panel lateral: métricas de pago */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -179,7 +289,7 @@ export default async function FacturacionPage() {
                 { label: 'Procedimientos', valor: stats.desgloseHoy.procedimientos, color: '#8b5cf6' },
                 { label: 'Laboratorio', valor: stats.desgloseHoy.laboratorio, color: '#10b981' },
               ].map(item => {
-                const pct = Math.round((item.valor / stats.ingresosHoy) * 100);
+                const pct = stats.ingresosHoy > 0 ? Math.round((item.valor / stats.ingresosHoy) * 100) : 0;
                 return (
                   <div key={item.label}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.25rem' }}>

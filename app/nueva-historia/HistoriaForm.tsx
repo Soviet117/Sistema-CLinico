@@ -397,7 +397,7 @@ export default function HistoriaForm({ pacientes, doctores }: HistoriaFormProps)
           </div>
 
           <div className="form-group">
-            <label htmlFor="precioFinal" className="form-label">Precio Base Especialidad (CLP)</label>
+            <label htmlFor="precioFinal" className="form-label">Precio Base Especialidad (PEN)</label>
             <input 
               id="precioFinal"
               name="precioFinal"

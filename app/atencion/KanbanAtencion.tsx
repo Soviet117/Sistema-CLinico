@@ -13,6 +13,7 @@ type CitaKanban = {
   motivo: string;
   estado: string;
   rawInicioISO: string;
+  saldoPendiente: number;
 };
 
 interface Props {
@@ -49,6 +50,16 @@ const COLUMNAS = [
     color: '#10b981',
     bg: '#f0fdf4',
     border: '#a7f3d0',
+  },
+  {
+    id: 'PENDIENTE_PAGO',
+    label: 'Pendiente de Pago',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+    ),
+    color: '#dc2626',
+    bg: '#fef2f2',
+    border: '#fecaca',
   }
 ];
 
@@ -80,7 +91,12 @@ export default function KanbanAtencion({ citasIniciales }: Props) {
 
     startTransition(async () => {
       addOptimisticCita({ id: cita.id, nuevoEstado });
-      await updateEstadoCita(cita.id, nuevoEstado);
+      const res = await updateEstadoCita(cita.id, nuevoEstado);
+      if (!res.success) {
+        alert(res.message);
+        router.refresh();
+        return;
+      }
 
       if (nuevoEstado === 'EN_CURSO') {
         router.push(`/nueva-historia?patientId=${cita.pacienteId}&medicoId=${cita.medicoId}&citaId=${cita.id}`);
@@ -91,6 +107,7 @@ export default function KanbanAtencion({ citasIniciales }: Props) {
   const retroceder = (id: string, estadoActual: string) => {
     let nuevoEstado = '';
     if (estadoActual === 'COMPLETADA') nuevoEstado = 'EN_CURSO';
+    else if (estadoActual === 'PENDIENTE_PAGO') nuevoEstado = 'EN_CURSO';
     else if (estadoActual === 'EN_CURSO') nuevoEstado = 'PROGRAMADA';
     else return;
 
@@ -107,6 +124,7 @@ export default function KanbanAtencion({ citasIniciales }: Props) {
   const totalEspera = optimisticCitas.filter(p => p.estado === 'PROGRAMADA').length;
   const totalConsulta = optimisticCitas.filter(p => p.estado === 'EN_CURSO').length;
   const totalAtendido = optimisticCitas.filter(p => p.estado === 'COMPLETADA').length;
+  const totalPendientePago = optimisticCitas.filter(p => p.estado === 'PENDIENTE_PAGO').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -138,6 +156,15 @@ export default function KanbanAtencion({ citasIniciales }: Props) {
           <div>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--secondary-color)', lineHeight: 1 }}>{totalAtendido}</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--secondary-light)', fontWeight: 500 }}>Atendidos Hoy</div>
+          </div>
+        </div>
+        <div className="card" style={{ flex: 1, minWidth: '180px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626', flexShrink: 0 }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+          </div>
+          <div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--secondary-color)', lineHeight: 1 }}>{totalPendientePago}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--secondary-light)', fontWeight: 500 }}>Por Cobrar</div>
           </div>
         </div>
       </div>
@@ -185,9 +212,14 @@ export default function KanbanAtencion({ citasIniciales }: Props) {
                         {p.medicoAsignado}
                       </span>
                       <span style={{ fontStyle: 'italic' }}>{p.motivo}</span>
+                      {p.estado === 'PENDIENTE_PAGO' && (
+                        <span style={{ color: '#dc2626', fontWeight: 800 }}>
+                          Saldo: {new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(p.saldoPendiente)}
+                        </span>
+                      )}
                     </div>
                     <div className="kanban-card-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      {col.id !== 'PROGRAMADA' && (
+                      {col.id !== 'PROGRAMADA' && col.id !== 'COMPLETADA' && (
                         <button
                           className="btn btn-outline"
                           style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem', flex: 1, color: 'var(--secondary-light)', borderColor: 'var(--border-color)' }}
@@ -198,7 +230,16 @@ export default function KanbanAtencion({ citasIniciales }: Props) {
                         </button>
                       )}
 
-                      {col.id !== 'COMPLETADA' && (
+                      {col.id === 'PENDIENTE_PAGO' ? (
+                        <button
+                          className="btn btn-primary"
+                          style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem', flex: 2, backgroundColor: col.color, borderColor: col.color }}
+                          onClick={() => router.push('/facturacion')}
+                          disabled={isPending}
+                        >
+                          Ir a Caja
+                        </button>
+                      ) : col.id !== 'COMPLETADA' && (
                         <button
                           className="btn btn-primary"
                           style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem', flex: 2, backgroundColor: col.color, borderColor: col.color }}

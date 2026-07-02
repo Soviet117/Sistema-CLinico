@@ -20,20 +20,111 @@ export async function updatePrecioEspecialidad(id: string, nuevoPrecio: number) 
 }
 
 // Acción para que el cajero registre el pago de una factura
-export async function registrarPagoFactura(facturaId: string, metodoPago: "EFECTIVO" | "TARJETA" | "TRANSFERENCIA") {
+type MetodoPagoInput = "EFECTIVO" | "TARJETA" | "TRANSFERENCIA" | "YAPE" | "PLIN";
+
+export async function registrarPagoFactura(facturaId: string, metodoPago: MetodoPagoInput) {
   try {
-    await prisma.factura.update({
-      where: { id: facturaId },
-      data: { 
-        estadoPago: 'PAGADO', 
-        metodoPago: metodoPago 
-      },
+    await prisma.$transaction(async (tx) => {
+      const factura = await tx.factura.update({
+        where: { id: facturaId },
+        data: {
+          estadoPago: 'PAGADO',
+          metodoPago: metodoPago,
+          fechaValidacion: new Date(),
+        },
+        include: { cita: { select: { estado: true } } },
+      });
+
+      if (factura.cita.estado === "PENDIENTE_PAGO") {
+        await tx.cita.update({
+          where: { id: factura.citaId },
+          data: { estado: "COMPLETADA" },
+        });
+      }
     });
     revalidatePath("/facturacion");
+    revalidatePath("/atencion");
+    revalidatePath("/agenda");
     return { success: true };
   } catch (error) {
     console.error("Error al registrar pago:", error);
     return { success: false, error: "Error al registrar pago de factura" };
+  }
+}
+
+export async function validarAdelanto(facturaId: string) {
+  try {
+    const user = await prisma.user.findFirst();
+    await prisma.factura.update({
+      where: { id: facturaId },
+      data: {
+        estadoAdelanto: "VALIDADO",
+        fechaValidacion: new Date(),
+        validadoPorId: user?.id || null,
+      },
+    });
+    revalidatePath("/facturacion");
+    revalidatePath("/agenda");
+    revalidatePath("/atencion");
+    return { success: true };
+  } catch (error) {
+    console.error("Error al validar adelanto:", error);
+    return { success: false, error: "Error al validar adelanto" };
+  }
+}
+
+export async function rechazarAdelanto(facturaId: string, observacion?: string) {
+  try {
+    await prisma.factura.update({
+      where: { id: facturaId },
+      data: {
+        estadoAdelanto: "RECHAZADO",
+        observacionPago: observacion || "Comprobante rechazado por recepción.",
+      },
+    });
+    revalidatePath("/facturacion");
+    revalidatePath("/agenda");
+    revalidatePath("/atencion");
+    return { success: true };
+  } catch (error) {
+    console.error("Error al rechazar adelanto:", error);
+    return { success: false, error: "Error al rechazar adelanto" };
+  }
+}
+
+export async function cobrarSaldoFactura(facturaId: string, metodoPago: MetodoPagoInput) {
+  try {
+    const factura = await prisma.factura.findUnique({
+      where: { id: facturaId },
+      include: { cita: true },
+    });
+
+    if (!factura) {
+      return { success: false, error: "Factura no encontrada" };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.factura.update({
+        where: { id: facturaId },
+        data: {
+          estadoPago: "PAGADO",
+          metodoPago,
+        },
+      });
+
+      await tx.cita.update({
+        where: { id: factura.citaId },
+        data: { estado: "COMPLETADA" },
+      });
+    });
+
+    revalidatePath("/facturacion");
+    revalidatePath("/agenda");
+    revalidatePath("/atencion");
+    return { success: true };
+  } catch (error) {
+    console.error("Error al cobrar saldo:", error);
+    return { success: false, error: "Error al cobrar saldo" };
   }
 }
 
@@ -51,6 +142,14 @@ export async function getFacturacionDashboardData() {
       },
       include: {
         paciente: { select: { nombre: true, apellido: true } },
+        cita: {
+          select: {
+            id: true,
+            estado: true,
+            fechaHoraInicio: true,
+            medico: { select: { user: { select: { nombre: true } } } },
+          }
+        },
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -63,29 +162,41 @@ export async function getFacturacionDashboardData() {
     const formattedFacturas = facturas.map(f => {
       const montoTotal = Number(f.montoTotal) || 0;
       const montoAdelanto = Number(f.montoAdelanto) || 0;
+      const adelantoValidado = f.estadoAdelanto === 'VALIDADO' ? montoAdelanto : 0;
+      const saldoPendiente = f.estadoPago === 'PAGADO' ? 0 : Math.max(montoTotal - adelantoValidado, 0);
       
       // Calculate earnings and receivables based on payment state and advance payments
       if (f.estadoPago === 'PAGADO') {
         ingresosHoy += montoTotal;
         facturasPagadas++;
       } else if (f.estadoPago === 'PENDIENTE') {
-        ingresosHoy += montoAdelanto; // Adelantos cobrados hoy
-        cuentasPorCobrar += (montoTotal - montoAdelanto);
+        ingresosHoy += adelantoValidado;
+        cuentasPorCobrar += saldoPendiente;
       }
 
       // Desglose
-      if (f.categoria === 'Consulta') desglose.consultas += (f.estadoPago === 'PAGADO' ? montoTotal : montoAdelanto);
-      else if (f.categoria === 'Procedimiento') desglose.procedimientos += (f.estadoPago === 'PAGADO' ? montoTotal : montoAdelanto);
-      else desglose.laboratorio += (f.estadoPago === 'PAGADO' ? montoTotal : montoAdelanto);
+      if (f.categoria === 'Consulta') desglose.consultas += (f.estadoPago === 'PAGADO' ? montoTotal : adelantoValidado);
+      else if (f.categoria === 'Procedimiento') desglose.procedimientos += (f.estadoPago === 'PAGADO' ? montoTotal : adelantoValidado);
+      else desglose.laboratorio += (f.estadoPago === 'PAGADO' ? montoTotal : adelantoValidado);
 
       return {
         id: f.id,
+        citaId: f.citaId,
         pacienteName: `${f.paciente.nombre} ${f.paciente.apellido}`,
         categoria: f.categoria,
         montoTotal,
         montoAdelanto,
+        adelantoValidado,
+        saldoPendiente,
         metodoPago: f.metodoPago || 'N/A',
+        metodoAdelanto: f.metodoAdelanto || 'N/A',
+        estadoAdelanto: f.estadoAdelanto,
+        comprobanteUrl: f.comprobanteUrl,
+        observacionPago: f.observacionPago,
         estado: f.estadoPago,
+        citaEstado: f.cita.estado,
+        citaFecha: f.cita.fechaHoraInicio,
+        medicoNombre: f.cita.medico.user.nombre,
       };
     });
 

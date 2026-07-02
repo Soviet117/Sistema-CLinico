@@ -68,6 +68,7 @@ export async function createHistoriaClinica(prevState: FormState, formData: Form
   }
 
   const data = validatedFields.data;
+  let estadoCierre: "COMPLETADA" | "PENDIENTE_PAGO" | null = null;
 
   try {
     // Verificar si el médico existe
@@ -141,25 +142,19 @@ export async function createHistoriaClinica(prevState: FormState, formData: Form
         },
       });
 
-      // 3. Actualizar el estado de la cita a 'COMPLETADA' y generar Factura si aplica
+      // 3. Actualizar la factura y cerrar la cita solo si no queda saldo pendiente.
       if (data.citaId) {
-        await tx.cita.update({
-          where: { id: data.citaId },
-          data: { estado: 'COMPLETADA' }
-        });
-
         // FACTURACIÓN: Actualizar la factura existente creada en Agenda
         // Se permite modificar el precio base de la especialidad usando 'precioFinal'
         const precioFinalNumber = data.precioFinal;
 
-        if (precioFinalNumber !== undefined && precioFinalNumber !== null) {
-          // Obtener la factura para asegurarse de que existe y actualizarla
-          const facturaExistente = await tx.factura.findUnique({
-            where: { citaId: data.citaId }
-          });
+        let facturaActualizada = await tx.factura.findUnique({
+          where: { citaId: data.citaId }
+        });
 
-          if (facturaExistente) {
-            await tx.factura.update({
+        if (precioFinalNumber !== undefined && precioFinalNumber !== null) {
+          if (facturaActualizada) {
+            facturaActualizada = await tx.factura.update({
               where: { citaId: data.citaId },
               data: {
                 montoBase: precioFinalNumber,
@@ -167,6 +162,28 @@ export async function createHistoriaClinica(prevState: FormState, formData: Form
               }
             });
           }
+        }
+
+        if (facturaActualizada) {
+          const adelantoValidado = facturaActualizada.estadoAdelanto === 'VALIDADO'
+            ? Number(facturaActualizada.montoAdelanto)
+            : 0;
+          const saldoPendiente = facturaActualizada.estadoPago === 'PAGADO'
+            ? 0
+            : Math.max(Number(facturaActualizada.montoTotal) - adelantoValidado, 0);
+
+          const nuevoEstado = saldoPendiente > 0 ? 'PENDIENTE_PAGO' : 'COMPLETADA';
+          await tx.cita.update({
+            where: { id: data.citaId },
+            data: { estado: nuevoEstado }
+          });
+          estadoCierre = nuevoEstado;
+        } else {
+          await tx.cita.update({
+            where: { id: data.citaId },
+            data: { estado: 'COMPLETADA' }
+          });
+          estadoCierre = 'COMPLETADA';
         }
       } else {
         // FLUJO PACIENTE "DE FRENTE": No hay cita previa
@@ -195,7 +212,7 @@ export async function createHistoriaClinica(prevState: FormState, formData: Form
 
         const now = new Date();
 
-        // 2. Crear Cita "Fantasma" Completada
+        // 2. Crear Cita "Fantasma" pendiente de pago hasta que caja cobre
         const nuevaCita = await tx.cita.create({
           data: {
             pacienteId: finalPacienteId,
@@ -205,9 +222,10 @@ export async function createHistoriaClinica(prevState: FormState, formData: Form
             fechaHoraInicio: now,
             fechaHoraFin: now,
             usuarioId: adminUser.id,
-            estado: 'COMPLETADA'
+            estado: 'PENDIENTE_PAGO'
           }
         });
+        estadoCierre = 'PENDIENTE_PAGO';
 
         // 3. Crear Factura desde cero por el monto total
         const precioFinal = data.precioFinal !== undefined && data.precioFinal !== null 
@@ -243,9 +261,11 @@ export async function createHistoriaClinica(prevState: FormState, formData: Form
   if (data.citaId) {
     revalidatePath("/atencion");
     revalidatePath("/agenda");
-    redirect("/atencion");
+    revalidatePath("/facturacion");
+    redirect(estadoCierre === "PENDIENTE_PAGO" ? "/facturacion" : "/atencion");
   } else {
     revalidatePath("/pacientes");
-    redirect("/pacientes");
+    revalidatePath("/facturacion");
+    redirect(estadoCierre === "PENDIENTE_PAGO" ? "/facturacion" : "/pacientes");
   }
 }
