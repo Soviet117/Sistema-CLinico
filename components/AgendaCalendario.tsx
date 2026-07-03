@@ -39,7 +39,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
   const [isNewPatient, setIsNewPatient] = useState(false);
 
   // Datos para renderizar el Grid Semanal
-  const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+  const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const hours = Array.from({ length: 9 }, (_, i) => i + 9); // 9:00 AM a 5:00 PM
 
   // Helper para calcular la fecha objetivo (si ya pasó, se mueve a la próxima semana)
@@ -156,6 +156,21 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
      });
   };
 
+  const getAdelantoLabel = (cita: Cita) => {
+    const factura = cita.factura;
+    if (!factura || Number(factura.montoAdelanto) <= 0) return null;
+
+    const labels: Record<string, { text: string; bg: string; color: string }> = {
+      VALIDADO: { text: 'Adelanto validado', bg: '#dcfce7', color: '#166534' },
+      COMPROBANTE_ENVIADO: { text: 'Adelanto en revisión', bg: '#fef3c7', color: '#92400e' },
+      PENDIENTE: { text: 'Adelanto pendiente', bg: '#fee2e2', color: '#991b1b' },
+      RECHAZADO: { text: 'Adelanto rechazado', bg: '#fee2e2', color: '#991b1b' },
+      NO_REQUIERE: { text: 'Sin adelanto', bg: '#e2e8f0', color: '#475569' },
+    };
+
+    return labels[factura.estadoAdelanto] || labels.PENDIENTE;
+  };
+
   if (!mounted) {
     return (
       <Card title="Calendario Semanal" subtitle="Cargando agenda...">
@@ -177,6 +192,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
         <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.8rem', padding: '0.75rem', backgroundColor: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--secondary-color)' }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--primary-light)', border: '2px solid var(--primary-color)' }}></span> Programada</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--secondary-color)' }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-en-curso-bg)', border: '2px solid var(--color-en-curso-text)' }}></span> En Curso</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--secondary-color)' }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#fef3c7', border: '2px solid #92400e' }}></span> Pendiente Pago</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--secondary-color)' }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-completada-bg)', border: '2px solid var(--color-completada-text)' }}></span> Completada</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--secondary-light)' }}><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-cancelada-bg)', border: '2px solid var(--color-cancelada-text)' }}></span> Cancelada</div>
         </div>
@@ -202,7 +218,8 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
       </div>
 
       <Card title="Calendario Semanal" subtitle="Haz clic en un bloque de 30 minutos para agendar una cita al instante">
-        <div style={{ display: 'grid', gridTemplateColumns: `80px repeat(${days.length}, 1fr)`, gap: '1px', backgroundColor: 'var(--border-color)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `80px repeat(${days.length}, 1fr)`, gap: '1px', backgroundColor: 'var(--border-color)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', minWidth: '700px' }}>
           {/* Encabezados de Días */}
           <div style={{ backgroundColor: 'var(--bg-app)', padding: '10px' }}></div>
           {days.map((d, dayIdx) => {
@@ -271,8 +288,10 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
                          let bgColor = 'var(--primary-light)';
                          let textColor = 'var(--primary-color)';
                          if (c.estado === 'EN_CURSO') { bgColor = 'var(--color-en-curso-bg)'; textColor = 'var(--color-en-curso-text)'; }
+                         if (c.estado === 'PENDIENTE_PAGO') { bgColor = '#fef3c7'; textColor = '#92400e'; }
                          if (c.estado === 'COMPLETADA') { bgColor = 'var(--color-completada-bg)'; textColor = 'var(--color-completada-text)'; }
                          if (c.estado === 'CANCELADA') { bgColor = 'var(--color-cancelada-bg)'; textColor = 'var(--color-cancelada-text)'; }
+                         const adelantoLabel = getAdelantoLabel(c);
 
                         return (
                           <div key={c.id} 
@@ -293,6 +312,11 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
                             }}>
                             <strong style={{ display: 'block', marginBottom: '2px' }}>{c.paciente?.nombre} {c.paciente?.apellido}</strong>
                             {c.estado !== 'CANCELADA' && <span style={{ color: 'inherit', opacity: 0.8, fontSize: '0.7rem' }}>Dr. {c.medico?.user?.nombre} | Box: {c.box?.nombre}</span>}
+                            {adelantoLabel && (
+                              <span style={{ display: 'inline-block', marginTop: '3px', padding: '1px 5px', borderRadius: '4px', backgroundColor: adelantoLabel.bg, color: adelantoLabel.color, fontSize: '0.64rem', fontWeight: 700 }}>
+                                {adelantoLabel.text}
+                              </span>
+                            )}
                           </div>
                         );
                      })}
@@ -318,6 +342,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
             </React.Fragment>
           ))}
         </div>
+        </div>
       </Card>
 
       {/* Modal Optimizado: Nueva Cita */}
@@ -328,7 +353,7 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           animation: 'fadeIn 0.2s ease-out'
         }}>
-          <div style={{ backgroundColor: 'var(--bg-card)', padding: '2rem', borderRadius: '16px', width: '95%', maxWidth: '700px', boxShadow: 'var(--shadow-lg)' }}>
+          <div style={{ backgroundColor: 'var(--bg-card)', padding: '2rem', borderRadius: '16px', width: '95%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)' }}>
             <h2 style={{ marginBottom: '0.5rem', color: 'var(--secondary-color)', fontSize: '1.25rem', fontWeight: 700 }}>Agendar Nueva Cita</h2>
             <p style={{ color: 'var(--secondary-light)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>Complete los datos para confirmar la asistencia del paciente.</p>
             
@@ -410,8 +435,30 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
               </div>
 
               <div>
-                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Adelanto a Cobrar (CLP) <span style={{ color: 'var(--secondary-light)', fontWeight: 'normal' }}>(Opcional)</span></label>
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Adelanto a Cobrar (PEN) <span style={{ color: 'var(--secondary-light)', fontWeight: 'normal' }}>(Opcional)</span></label>
                 <input type="number" name="montoAdelanto" className="form-control" placeholder="Ej. 10000" min="0" defaultValue="0" />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Método de Adelanto</label>
+                  <select name="metodoAdelanto" className="form-control" defaultValue="">
+                    <option value="">Sin adelanto</option>
+                    <option value="EFECTIVO">Efectivo</option>
+                    <option value="TRANSFERENCIA">Transferencia</option>
+                    <option value="YAPE">Yape</option>
+                    <option value="PLIN">Plin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Comprobante</label>
+                  <input type="file" name="comprobanteAdelanto" className="form-control" accept="image/png,image/jpeg,image/webp,application/pdf" />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Observación de Pago</label>
+                <input type="text" name="observacionPago" className="form-control" placeholder="Ej. Operación 123456, pendiente de validar..." />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
@@ -443,8 +490,8 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
                 <h2 style={{ color: 'var(--secondary-color)', fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Detalles de la Cita</h2>
                 <span style={{ 
                   display: 'inline-block', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600, marginTop: '0.5rem',
-                  backgroundColor: selectedCita.estado === 'PROGRAMADA' ? 'var(--primary-light)' : selectedCita.estado === 'EN_CURSO' ? 'var(--color-en-curso-bg)' : selectedCita.estado === 'COMPLETADA' ? 'var(--color-completada-bg)' : 'var(--color-cancelada-bg)',
-                  color: selectedCita.estado === 'PROGRAMADA' ? 'var(--primary-color)' : selectedCita.estado === 'EN_CURSO' ? 'var(--color-en-curso-text)' : selectedCita.estado === 'COMPLETADA' ? 'var(--color-completada-text)' : 'var(--color-cancelada-text)'
+                  backgroundColor: selectedCita.estado === 'PROGRAMADA' ? 'var(--primary-light)' : selectedCita.estado === 'EN_CURSO' ? 'var(--color-en-curso-bg)' : selectedCita.estado === 'PENDIENTE_PAGO' ? '#fef3c7' : selectedCita.estado === 'COMPLETADA' ? 'var(--color-completada-bg)' : 'var(--color-cancelada-bg)',
+                  color: selectedCita.estado === 'PROGRAMADA' ? 'var(--primary-color)' : selectedCita.estado === 'EN_CURSO' ? 'var(--color-en-curso-text)' : selectedCita.estado === 'PENDIENTE_PAGO' ? '#92400e' : selectedCita.estado === 'COMPLETADA' ? 'var(--color-completada-text)' : 'var(--color-cancelada-text)'
                 }}>
                   {selectedCita.estado}
                 </span>
@@ -489,6 +536,15 @@ export default function AgendaCalendario({ citasIniciales, medicos, boxes, pacie
                 <strong style={{ display: 'block', color: 'var(--secondary-light)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Horario Programado</strong>
                 <div>{new Date(selectedCita.fechaHoraInicio).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(selectedCita.fechaHoraFin).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
               </div>
+
+              {selectedCita.factura && (
+                <div>
+                  <strong style={{ display: 'block', color: 'var(--secondary-light)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pago</strong>
+                  <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg-app)', borderRadius: '6px', border: '1px solid var(--border-color)', marginTop: '0.25rem' }}>
+                    Adelanto: S/ {Number(selectedCita.factura.montoAdelanto || 0).toFixed(2)} · Estado: {selectedCita.factura.estadoAdelanto}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>

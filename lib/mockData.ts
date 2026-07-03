@@ -81,7 +81,7 @@ export interface KanbanPaciente {
 
 export interface CeldaCalendario {
   id: string;
-  dia: string; // Lunes, Martes, Miércoles, Jueves, Viernes
+  dia: string; // Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo
   hora: string; // 08:00 a 18:00
   estado: 'Disponible' | 'Ocupado' | 'Pausa médica';
   info?: string;
@@ -413,7 +413,7 @@ export const mockKanbanAtencion: KanbanPaciente[] = [
 // ----------------------------------------------------
 // MOCK DATA PARA AGENDA (CALENDARIO)
 // ----------------------------------------------------
-const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const horasDia = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
 
 const generarCalendario = (): CeldaCalendario[] => {

@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import { CitaSchema } from "@/lib/validations/citas";
 import { revalidatePath } from "next/cache";
+import { mkdir, writeFile } from "fs/promises";
+import path from "path";
 
 export type FormStateAgenda = {
   errors?: {
@@ -13,6 +15,8 @@ export type FormStateAgenda = {
     fechaHoraInicio?: string[];
     fechaHoraFin?: string[];
     montoAdelanto?: string[];
+    metodoAdelanto?: string[];
+    observacionPago?: string[];
     _form?: string[];
   };
   message?: string | null;
@@ -28,6 +32,8 @@ export async function createCita(prevState: FormStateAgenda, formData: FormData)
     fechaHoraInicio: formData.get("fechaHoraInicio"),
     fechaHoraFin: formData.get("fechaHoraFin"),
     montoAdelanto: formData.get("montoAdelanto"),
+    metodoAdelanto: formData.get("metodoAdelanto") || undefined,
+    observacionPago: formData.get("observacionPago") || undefined,
   };
 
   const validatedFields = CitaSchema.safeParse(rawData);
@@ -40,10 +46,31 @@ export async function createCita(prevState: FormStateAgenda, formData: FormData)
     };
   }
 
-  const { pacienteId, medicoId, boxId, motivo, fechaHoraInicio, fechaHoraFin, montoAdelanto } = validatedFields.data;
+  const { pacienteId, medicoId, boxId, motivo, fechaHoraInicio, fechaHoraFin, montoAdelanto, metodoAdelanto, observacionPago } = validatedFields.data;
 
   const start = new Date(fechaHoraInicio);
   const end = new Date(fechaHoraFin);
+  const comprobante = formData.get("comprobanteAdelanto");
+  const comprobanteFile = comprobante instanceof File && comprobante.size > 0 ? comprobante : null;
+
+  if (comprobanteFile) {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!allowedTypes.includes(comprobanteFile.type)) {
+      return {
+        message: "El comprobante debe ser una imagen JPG/PNG/WebP o PDF.",
+        errors: { _form: ["Formato de comprobante inválido."] },
+        success: false
+      };
+    }
+
+    if (comprobanteFile.size > 5 * 1024 * 1024) {
+      return {
+        message: "El comprobante no debe superar los 5 MB.",
+        errors: { _form: ["Archivo demasiado grande."] },
+        success: false
+      };
+    }
+  }
 
   try {
     // 1. Verificar Overbooking (Condición de Carrera / Disponibilidad)
@@ -117,6 +144,25 @@ export async function createCita(prevState: FormStateAgenda, formData: FormData)
 
     const precioBase = boxDetalle?.especialidad?.precioBase || 0;
     const adelantoNum = Number(montoAdelanto) || 0;
+    let comprobanteUrl: string | null = null;
+
+    if (comprobanteFile) {
+      const extension = path.extname(comprobanteFile.name).toLowerCase() || ".jpg";
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "comprobantes");
+      const fileName = `${nuevaCita.id}-${Date.now()}${extension}`;
+      await mkdir(uploadDir, { recursive: true });
+      await writeFile(path.join(uploadDir, fileName), Buffer.from(await comprobanteFile.arrayBuffer()));
+      comprobanteUrl = `/uploads/comprobantes/${fileName}`;
+    }
+
+    const estadoAdelanto =
+      adelantoNum <= 0
+        ? "NO_REQUIERE"
+        : metodoAdelanto === "EFECTIVO"
+          ? "VALIDADO"
+          : comprobanteUrl
+            ? "COMPROBANTE_ENVIADO"
+            : "PENDIENTE";
 
     await prisma.factura.create({
       data: {
@@ -124,6 +170,13 @@ export async function createCita(prevState: FormStateAgenda, formData: FormData)
         montoAdelanto: adelantoNum,
         montoTotal: precioBase, // Initially total is just the base price, wait, or wait until historia? No, total is base price for now.
         estadoPago: 'PENDIENTE',
+        metodoAdelanto: metodoAdelanto || null,
+        estadoAdelanto,
+        comprobanteUrl,
+        observacionPago: observacionPago || null,
+        fechaComprobante: comprobanteUrl ? new Date() : null,
+        fechaValidacion: estadoAdelanto === "VALIDADO" ? new Date() : null,
+        validadoPorId: estadoAdelanto === "VALIDADO" ? adminUser.id : null,
         citaId: nuevaCita.id,
         pacienteId: finalPacienteId,
         categoria: 'Consulta',
@@ -140,6 +193,7 @@ export async function createCita(prevState: FormStateAgenda, formData: FormData)
   }
 
   revalidatePath("/agenda");
+  revalidatePath("/facturacion");
   return { success: true, message: "Cita programada con éxito." };
 }
 
@@ -160,7 +214,8 @@ export async function getAgenda(startDate: Date, endDate: Date, filterMedicoId?:
       include: {
         paciente: { select: { id: true, nombre: true, apellido: true } },
         medico: { select: { id: true, user: { select: { nombre: true } } } },
-        box: { select: { id: true, nombre: true } }
+        box: { select: { id: true, nombre: true } },
+        factura: { select: { montoTotal: true, montoAdelanto: true, estadoPago: true, estadoAdelanto: true } }
       },
       orderBy: { fechaHoraInicio: 'asc' }
     });
@@ -173,12 +228,35 @@ export async function getAgenda(startDate: Date, endDate: Date, filterMedicoId?:
 }
 export async function updateEstadoCita(citaId: string, nuevoEstado: any) {
   try {
+    if (nuevoEstado === "COMPLETADA") {
+      const factura = await prisma.factura.findUnique({
+        where: { citaId },
+        select: { montoTotal: true, montoAdelanto: true, estadoPago: true, estadoAdelanto: true }
+      });
+
+      if (factura && factura.estadoPago !== "PAGADO") {
+        const adelantoValidado = factura.estadoAdelanto === "VALIDADO" ? Number(factura.montoAdelanto) : 0;
+        const saldo = Math.max(Number(factura.montoTotal) - adelantoValidado, 0);
+        if (saldo > 0) {
+          await prisma.cita.update({
+            where: { id: citaId },
+            data: { estado: "PENDIENTE_PAGO" }
+          });
+          revalidatePath("/agenda");
+          revalidatePath("/atencion");
+          revalidatePath("/facturacion");
+          return { success: false, message: "La cita tiene saldo pendiente. Debe pasar por caja antes de completarse." };
+        }
+      }
+    }
+
     await prisma.cita.update({
       where: { id: citaId },
       data: { estado: nuevoEstado }
     });
     revalidatePath("/agenda");
     revalidatePath("/atencion");
+    revalidatePath("/facturacion");
     return { success: true, message: `Cita actualizada a ${nuevoEstado}.` };
   } catch (error) {
     console.error("Error updating cita:", error);

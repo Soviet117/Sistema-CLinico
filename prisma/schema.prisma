@@ -26,6 +26,7 @@ enum Genero {
 enum EstadoCita {
   PROGRAMADA
   EN_CURSO
+  PENDIENTE_PAGO
   COMPLETADA
   CANCELADA
 }
@@ -51,6 +52,16 @@ enum MetodoPago {
   EFECTIVO
   TARJETA
   TRANSFERENCIA
+  YAPE
+  PLIN
+}
+
+enum EstadoAdelanto {
+  NO_REQUIERE
+  PENDIENTE
+  COMPROBANTE_ENVIADO
+  VALIDADO
+  RECHAZADO
 }
 
 // Modelo Especialidad (Catálogo de Precios y Áreas)
@@ -227,6 +238,13 @@ model Factura {
   montoTotal    Decimal     @db.Decimal(10, 2)
   estadoPago    EstadoPago  @default(PENDIENTE)
   metodoPago    MetodoPago?
+  metodoAdelanto MetodoPago?
+  estadoAdelanto EstadoAdelanto @default(NO_REQUIERE)
+  comprobanteUrl String?
+  observacionPago String?
+  fechaComprobante DateTime?
+  fechaValidacion DateTime?
+  validadoPorId String?
   categoria     String      @default("Consulta")
   fechaEmision  DateTime    @default(now())
 
