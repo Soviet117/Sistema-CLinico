@@ -78,7 +78,7 @@ Sistema-CLinico/
 
 ---
 
-## 🖥️ Módulos Visuales Incluidos
+## Módulos Visuales Incluidos
 
 1. **Dashboard Principal (`/`)**:
    - Tarjetas KPI dinámicas: Pacientes Activos, Citas Programadas, Historias Registradas, Eficiencia.
