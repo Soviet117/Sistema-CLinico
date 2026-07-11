@@ -1,5 +1,7 @@
 import React from 'react';
 import Card from '@/components/Card';
+
+export const dynamic = 'force-dynamic';
 import ComprobantePreview from '@/components/ComprobantePreview';
 import { ValidarBtn, RechazarBtn } from '@/components/ValidarAdelantoBtn';
 import CobrarForm from '@/components/CobrarForm';

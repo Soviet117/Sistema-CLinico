@@ -1,5 +1,7 @@
 import React from 'react';
 import Card from '@/components/Card';
+
+export const dynamic = 'force-dynamic';
 import { DonutChart, HorizontalBarChart, RevenueExecutiveChart } from '@/components/ClinicalCharts';
 import { getExecutiveKPIs, getRevenueEvolution, getSpecialtyProfitability, getMedicoEfficiency, getBoxOccupancy } from '@/app/actions/dashboard';
 
