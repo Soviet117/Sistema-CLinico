@@ -98,7 +98,7 @@ export default function PatientsPage() {
 
       printWindow.document.write('<div class="header">');
       printWindow.document.write('<h1 class="title">Historia Clínica Completa</h1>');
-      printWindow.document.write('<p class="subtitle">MediHist - Portal Clínico</p>');
+      printWindow.document.write('<p class="subtitle">Silvestre Clinic Manager</p>');
       printWindow.document.write('</div>');
 
       printWindow.document.write('<div class="section">');

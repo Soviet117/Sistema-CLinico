@@ -111,7 +111,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <path d="M20 8v24M8 20h24" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
               <circle cx="20" cy="20" r="6" stroke="white" strokeWidth="2.5" fill="none" />
             </svg>
-            <span className="logo-text">MediHist</span>
+            <span className="logo-text">Silvestre Clinic Manager</span>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
-# MediHist - Sistema de Gestión de Historias Clínicas y Dashboard Médico
+# Silvestre Clinic Manager
 
-Este proyecto es la estructura base y maqueta visual interactiva de un **Sistema de Gestión Clínica** desarrollado con **Next.js (App Router)**, **Vanilla CSS** para diseño premium responsivo, **Prisma** como ORM y **PostgreSQL** dentro de contenedores **Docker**.
+Sistema de gestión clínica profesional desarrollado con **Next.js (App Router)**, **Vanilla CSS**, **Prisma** y **PostgreSQL**.
 
 La aplicación está diseñada para servir como demo visual y funcional robusta para presentaciones académicas o profesionales, simulando flujos clínicos completos mediante datos estructurados locales.
 

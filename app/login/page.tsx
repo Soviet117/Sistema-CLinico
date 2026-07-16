@@ -44,7 +44,7 @@ export default function LoginPage() {
               <path d="M20 8v24M8 20h24" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
               <circle cx="20" cy="20" r="6" stroke="white" strokeWidth="2.5" fill="none" />
             </svg>
-            <span className="login-logo-text">Dr. Silvestre</span>
+            <span className="login-logo-text">Silvestre Clinic Manager</span>
           </div>
           <h1 className="login-title">Sistema de Gestión Clínica</h1>
           <p className="login-subtitle">Inicia sesión para acceder al panel</p>
@@ -116,7 +116,7 @@ export default function LoginPage() {
         </form>
 
         <div className="login-footer">
-          <p>MediHist v1.0 &mdash; Sistema Clínico Profesional</p>
+          <p>Silvestre Clinic Manager v1.0</p>
         </div>
       </div>
     </div>

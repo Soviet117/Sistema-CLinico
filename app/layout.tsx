@@ -6,8 +6,8 @@ import ToastProvider from '@/components/ToastProvider'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
 export const metadata = {
-  title: 'MediHist - Sistema de Gestión Clínica',
-  description: 'Sistema de gestión de historias clínicas y dashboard médico profesional',
+  title: 'Silvestre Clinic Manager',
+  description: 'Silvestre Clinic Manager - Sistema de gestión clínica profesional',
 }
 
 export default function RootLayout({
