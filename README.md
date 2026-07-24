@@ -1,6 +1,6 @@
 # Silvestre Clinic Manager
 
-Sistema de gestión clínica profesional desarrollado con **Next.js (App Router)**, **Vanilla CSS**, **Prisma** y **PostgreSQL**.
+Sistema de gestión clínica profesional desarrollado con **Next.js 16 (App Router)**, **Tailwind CSS v4**, **Prisma 6** y **PostgreSQL 15**.
 
 La aplicación está diseñada para servir como demo visual y funcional robusta para presentaciones académicas o profesionales, simulando flujos clínicos completos mediante datos estructurados locales.
 
@@ -8,7 +8,6 @@ La aplicación está diseñada para servir como demo visual y funcional robusta 
 
 ## Requisitos Previos
 
-Asegúrate de tener instalados los siguientes componentes en tu sistema:
 - **Docker** y **Docker Compose**
 - **Node.js** (opcional, si deseas ejecutar comandos locales)
 
@@ -16,109 +15,266 @@ Asegúrate de tener instalados los siguientes componentes en tu sistema:
 
 ## Instrucciones de Inicio Rápido
 
-Para levantar la base de datos PostgreSQL y el servidor de desarrollo de Next.js de manera local mediante Docker:
+### 1. Configurar el archivo `.env`
 
-1. **Configurar el archivo `.env`**
-   Copia el archivo de ejemplo o edita el `.env` existente en la raíz con tus credenciales preferidas (el archivo `.env` por defecto ya está configurado con valores listos para usar):
-   ```bash
-   cp .env.example .env
-   ```
+Copia el archivo de ejemplo o edita el `.env` existente en la raíz con tus credenciales preferidas (el archivo `.env` por defecto ya está configurado con valores listos para usar):
 
-2. **Levantar el entorno Docker**
-   Ejecuta el siguiente comando en la raíz del proyecto para construir las imágenes e iniciar los contenedores:
-   ```bash
-   docker-compose up --build
-   ```
-   *Nota: Si tienes problemas de permisos con sockets en Linux, es posible que necesites ejecutarlo con `sudo docker-compose up --build`.*
+```bash
+cp .env.example .env
+```
 
-3. **Acceder a la aplicación**
-   Una vez que el contenedor de Next.js esté activo, abre tu navegador e ingresa a:
-   **[http://localhost:3000](http://localhost:3000)**
+### 2. Levantar el entorno Docker
 
-4. **Ver la Base de Datos (Prisma Studio)**
-   Para visualizar las tablas configuradas en PostgreSQL, puedes ejecutar Prisma Studio localmente (requiere `npm install` local):
-   ```bash
-   npx prisma studio
-   ```
+Ejecuta el siguiente comando en la raíz del proyecto para construir las imágenes e iniciar los contenedores:
+
+```bash
+docker compose up --build
+```
+
+*Nota: Si tienes problemas de permisos con sockets en Linux, es posible que necesites ejecutarlo con `sudo docker compose up --build`.*
+
+### 3. Ejecutar el Seed (poblado de datos de prueba)
+
+Una vez que los contenedores estén activos, ejecuta el seed para poblar la base de datos con datos de prueba (especialidades, boxes, usuarios, pacientes, citas y facturas):
+
+```bash
+docker compose exec nextjs npm run seed
+```
+
+> **Importante:** El seed borra todos los datos existentes y los vuelve a crear. Solo ejecútalo si necesitas repoblar la base de datos.
+
+### 4. Acceder a la aplicación
+
+Abre tu navegador e ingresa a:
+
+**[http://localhost:3000](http://localhost:3000)**
+
+### Credenciales por defecto
+
+| Rol | Email | Contraseña |
+|---|---|---|
+| Admin | `silvestre@clinica.com` | `admin123` |
+| Recepcionista | `recepcion@clinica.com` | `recepcion123` |
 
 ---
 
-## Estructura del Proyecto Entregado
+## Conexión a la Base de Datos
 
-La organización de carpetas del proyecto es la siguiente:
+Para conectarte a PostgreSQL directamente desde la línea de comandos:
+
+```bash
+docker compose exec postgres psql -U user_db -d db_sistema_clinico
+```
+
+Comandos útiles de `psql`:
+
+| Comando | Descripción |
+|---|---|
+| `\dt` | Listar todas las tablas |
+| `\d nombre_tabla` | Ver estructura de una tabla |
+| `\dt+` | Listar tablas con detalle (tamaño) |
+| `\l` | Listar bases de datos |
+| `\du` | Listar usuarios |
+| `\q` | Salir de psql |
+
+---
+
+## Estructura del Proyecto
 
 ```text
-Sistema-CLinico/
-├── app/                        # Rutas de Next.js (App Router)
-│   ├── api/                    # APIs de prueba preexistentes
-│   ├── pacientes/              # Módulo de Pacientes
-│   │   ├── page.tsx            # Vista: Listado y búsqueda de pacientes
-│   │   └── [id]/               # Ficha de Paciente
-│   │       └── page.tsx        # Vista: Detalle e historia clínica interactiva
-│   ├── nueva-historia/         # Módulo de Formulario
-│   │   └── page.tsx            # Vista: Formulario de nueva consulta/ficha médica
-│   ├── globals.css             # Estilos de diseño clínico premium (Vanilla CSS)
-│   ├── layout.tsx              # Layout Next.js con metadatos y layout estructurado
-│   └── page.tsx                # Vista: Dashboard Principal (KPIs y Agenda)
-├── components/                 # Componentes React reutilizables
-│   ├── Card.tsx                # Tarjetas para métricas y contenedores
-│   ├── ClinicalCharts.tsx      # Gráficos SVG interactivos nativos (Líneas y Barras)
-│   ├── DashboardLayout.tsx     # Contenedor principal de la interfaz
-│   ├── Header.tsx              # Barra superior con buscador y perfil
-│   └── Sidebar.tsx             # Menú de navegación lateral responsivo
-├── lib/
-│   ├── mockData.ts             # Base de datos ficticia estructurada para simulación
-│   └── prisma.ts               # Cliente global de Prisma
+sistema-clinico/
+├── app/                            # Rutas Next.js (App Router)
+│   ├── layout.tsx                  # Layout raíz (Theme + Toast + Auth + DashboardLayout)
+│   ├── page.tsx                    # Dashboard principal (server component)
+│   ├── globals.css                 # Estilos globales (Vanilla CSS, glassmorphism)
+│   ├── login/
+│   │   └── page.tsx               # Página de inicio de sesión
+│   ├── pacientes/
+│   │   ├── page.tsx               # Listado y búsqueda de pacientes
+│   │   └── [id]/
+│   │       ├── page.tsx           # Detalle del paciente (server)
+│   │       ├── PatientDetailClient.tsx
+│   │       ├── PatientTabsClient.tsx
+│   │       └── not-found.tsx
+│   ├── nueva-historia/
+│   │   ├── page.tsx               # Formulario de nueva historia clínica
+│   │   └── HistoriaForm.tsx
+│   ├── atencion/
+│   │   ├── page.tsx               # Atención de pacientes (MIS/Kanban)
+│   │   └── KanbanAtencion.tsx
+│   ├── agenda/
+│   │   └── page.tsx               # Calendario y agenda médica
+│   ├── facturacion/
+│   │   └── page.tsx               # Módulo de facturación
+│   ├── medicos/
+│   │   ├── page.tsx               # Gestión de médicos
+│   │   └── MedicosManager.tsx
+│   ├── ejecutivo/
+│   │   ├── page.tsx               # Dashboard ejecutivo (EIS)
+│   │   └── reportes/
+│   │       └── page.tsx           # Reportes
+│   ├── configuracion/
+│   │   └── page.tsx               # Configuración (usuarios, roles, permisos)
+│   ├── actions/                    # Server Actions (todas las operaciones CRUD)
+│   │   ├── auth.ts                # Login + getUserById
+│   │   ├── pacientes.ts           # CRUD pacientes + búsqueda
+│   │   ├── historia.ts            # Crear historia clínica (+ paciente + factura)
+│   │   ├── agenda.ts              # Crear/actualizar/reprogramar citas
+│   │   ├── dashboard.ts           # KPIs, ocupación de boxes, gráficos, datos ejecutivos
+│   │   ├── facturacion.ts         # Registro de pagos, dashboard de facturación
+│   │   ├── reportes.ts            # Reportes (citas, historias, financieros)
+│   │   ├── usuarios.ts            # CRUD usuarios, roles, permisos
+│   │   ├── infraestructura.ts     # CRUD Médico, Box, Especialidad
+│   │   └── notificaciones.ts      # Citas próximas + listado de usuarios
+│   └── api/
+│       ├── users/route.ts         # API REST para usuarios
+│       └── comprobante-pago/[id]/route.ts  # Comprobante de pago (binario)
+├── components/                     # Componentes React reutilizables
+│   ├── AuthProvider.tsx           # Contexto de autenticación (localStorage)
+│   ├── AgendaCalendario.tsx       # Calendario de agenda
+│   ├── Card.tsx                   # Tarjetas para métricas
+│   ├── ClinicalCharts.tsx         # Gráficos SVG interactivos
+│   ├── CobrarForm.tsx             # Formulario de cobro
+│   ├── DashboardLayout.tsx        # Contenedor principal de la interfaz
+│   ├── EditarPacienteForm.tsx     # Formulario de edición de paciente
+│   ├── ErrorBoundary.tsx          # Manejo de errores
+│   ├── Header.tsx                 # Barra superior
+│   ├── NotificationDropdown.tsx   # Dropdown de notificaciones
+│   ├── Sidebar.tsx                # Menú de navegación lateral
+│   ├── ThemeProvider.tsx          # Proveedor de tema
+│   ├── ToastProvider.tsx          # Proveedor de notificaciones toast
+│   └── reportes/
+│       ├── FiltrosReporte.tsx     # Filtros de reportes
+│       └── TablaPrevisualizacion.tsx  # Tabla de previsualización
+├── lib/                            # Utilidades compartidas
+│   ├── prisma.ts                  # Cliente Prisma singleton
+│   ├── password.ts                # Hash/verificación de contraseñas (scrypt)
+│   ├── mockData.ts                # Datos mock estáticos (legacy/fallback)
+│   └── validations/               # Esquemas de validación Zod
+│       ├── pacientes.ts
+│       ├── citas.ts
+│       ├── historia.ts
+│       └── medicos.ts
 ├── prisma/
-│   └── schema.prisma           # Esquema de base de datos clínico preparado
-├── Dockerfile                  # Receta de construcción de la imagen de desarrollo
-├── docker-compose.yml          # Orquestación de Next.js y PostgreSQL
-└── README.md                   # Esta guía
+│   ├── schema.prisma              # Esquema completo de la base de datos
+│   ├── seed.ts                    # Script de seed (datos de prueba)
+│   └── migrations/                # Migraciones de Prisma
+├── scripts/
+│   └── seed-if-empty.js           # Seed condicional (solo para Render)
+├── public/                         # Archivos estáticos
+├── docker-compose.yml              # Orquestación Docker (Next.js + PostgreSQL)
+├── Dockerfile                      # Multi-stage build (builder + runner)
+├── entrypoint.sh                   # Entrada del contenedor (generate + migrate + dev)
+├── render.yaml                     # Blueprint de despliegue en Render
+└── README.md                       # Esta guía
 ```
 
 ---
 
-## Módulos Visuales Incluidos
+## Módulos de la Aplicación
 
-1. **Dashboard Principal (`/`)**:
-   - Tarjetas KPI dinámicas: Pacientes Activos, Citas Programadas, Historias Registradas, Eficiencia.
-   - Gráfica de Líneas SVG: Crecimiento mensual de pacientes con tooltips informativos interactivos.
-   - Gráfica de Barras SVG: Distribución de pacientes por especialidad médica.
-   - Tabla de Agenda Médica de Hoy: Citas listadas por hora con badges de estado y acciones demostrativas.
-   
-2. **Listado de Pacientes (`/pacientes`)**:
-   - Barra de búsqueda interactiva: Filtra al instante por nombre, teléfono, correo o ID.
-   - Selectores de filtro avanzados: Permiten depurar la tabla según el género o el estado clínico del paciente (Estable, En Observación, Crítico).
-   - Acciones: Acceso directo a la ficha del paciente ("Ver Historia").
+### 1. Dashboard Principal (`/`)
+- Tarjetas KPI dinámicas: Pacientes Activos, Citas Programadas, Historias Registradas, Eficiencia
+- Gráfica de Líneas SVG: Crecimiento mensual de pacientes con tooltips interactivos
+- Gráfica de Barras SVG: Distribución de pacientes por especialidad médica
+- Tabla de Agenda Médica de Hoy: Citas listadas por hora con badges de estado
 
-3. **Nueva Historia Clínica (`/nueva-historia`)**:
-   - Formulario médico profesional dividido en:
-     - Ficha demográfica del paciente (permite buscar/cargar un paciente existente o rellenar campos para uno nuevo).
-     - Signos vitales (Presión arterial, pulso, temperatura, peso).
-     - Detalle de la consulta (motivo, síntomas, diagnóstico clínico y plan de tratamiento).
-   - Botón de guardado funcional que emite alertas demostrativas e interactúa con los parámetros de la URL.
+### 2. Login (`/login`)
+- Formulario de autenticación con email y contraseña
+- Almacenamiento de sesión en localStorage
+- Redirección automática al dashboard
 
-4. **Detalle e Historia Clínica (`/pacientes/[id]`)**:
-   - Ficha de perfil resumida con detalles de contacto, alergias en color de alerta y antecedentes médicos del paciente seleccionado.
-   - Línea de tiempo (Timeline) vertical interactiva que lista las consultas anteriores, ordenadas de más reciente a más antigua.
-   - Detalle de recetas, diagnósticos y signos vitales históricos de cada consulta del paciente.
+### 3. Listado de Pacientes (`/pacientes`)
+- Barra de búsqueda interactiva: Filtra por nombre, teléfono, correo o ID
+- Selectores de filtro: Género y estado clínico
+- Acceso directo a la ficha del paciente
+
+### 4. Detalle de Paciente (`/pacientes/[id]`)
+- Ficha de perfil con datos de contacto, alergias y antecedentes
+- Línea de tiempo vertical con historial de consultas
+- Detalle de recetas, diagnósticos y signos vitales
+
+### 5. Nueva Historia Clínica (`/nueva-historia`)
+- Formulario dividido en: ficha demográfica, signos vitales, detalle de consulta
+- Búsqueda/carga de paciente existente o creación de nuevo
+- Creación automática de paciente, cita y factura
+
+### 6. Atención de Pacientes (`/atencion`)
+- Vista Kanban con columnas por estado de cita (Programada, En Curso, Pendiente Pago, Completada)
+- Gestión del flujo de atención médica
+
+### 7. Agenda (`/agenda`)
+- Calendario visual de citas médicas
+- Creación, edición y reprogramación de citas
+
+### 8. Facturación (`/facturacion`)
+- Registro de pagos con múltiples métodos (Efectivo, Tarjeta, Transferencia, Yape, Plin)
+- Dashboard de estado de facturas
+- Generación de comprobantes de pago
+
+### 9. Gestión de Médicos (`/medicos`)
+- CRUD de médicos con especialidades
+- Asignación de boxes
+
+### 10. Dashboard Ejecutivo (`/ejecutivo`)
+- Métricas ejecutivas y KPIs de negocio
+- Reportes exportables (`/ejecutivo/reportes`)
+
+### 11. Configuración (`/configuracion`)
+- Gestión de usuarios y roles (Admin, Doctor, Recepcionista)
+- Asignación de permisos por módulo
 
 ---
 
-## Características de Diseño (Vanilla CSS)
+## Esquema de Base de Datos
 
-- **Aesthetics Premium**: Uso de una paleta de color curada en base a azules cielo, grises suaves y verdes médicos.
-- **Glassmorphism**: Efectos de desenfoque (`backdrop-filter`) y sombras suaves (`box-shadow`) en el Sidebar y Header.
-- **Micro-animaciones**: Transiciones de escala en los botones, hover dinámico en las filas de las tablas y barras del gráfico.
-- **Responsividad Completa**: Grid CSS y Media Queries para adaptar la interfaz a dispositivos móviles, tablets y monitores de escritorio.
-- **Compatibilidad**: Gráficos desarrollados en SVG puro dentro de React para garantizar compatibilidad total con **React 19 / SSR de Next.js**, eliminando problemas de desajuste de hidratación.
+El esquema completo se encuentra en `prisma/schema.prisma`. Modelos principales:
+
+| Modelo | Descripción |
+|---|---|
+| **Especialidad** | Especialidades médicas con precio base |
+| **User** | Usuarios del sistema con roles (Admin, Doctor, Recepcionista) |
+| **RolePermission** | Permisos de acceso por rol y módulo |
+| **Medico** | Datos médicos vinculados a un usuario |
+| **MedicoEspecialidad** | Relación N:M médico-especialidad |
+| **Box** | Boxes médicos por especialidad |
+| **Paciente** | Datos demográficos, alergias y antecedentes |
+| **HistoriaClinica** | Entradas médicas vinculadas a paciente, médico y box |
+| **Cita** | Citas médicas con estado y programación |
+| **Factura** | Facturación vinculada a citas con datos de pago |
 
 ---
 
-## Esquema de Base de Datos (`schema.prisma`)
+## Comandos Útiles
 
-El esquema de la base de datos se encuentra listo para el momento en el que se decida conectar con la lógica real. Contiene los siguientes modelos vinculados:
-- **Paciente**: Almacena datos demográficos, alergias y antecedentes.
-- **HistoriaClinica**: Registra cada entrada médica vinculada a un paciente.
-- **Cita**: Administra el cronograma y estado de atenciones del paciente.
-- **User**: Control de usuarios básicos.
+```bash
+# Levantar el entorno
+docker compose up --build
+
+# Ejecutar el seed
+docker compose exec nextjs npm run seed
+
+# Conectarse a PostgreSQL
+docker compose exec postgres psql -U user_db -d db_sistema_clinico
+
+# Ver logs de Next.js
+docker compose logs -f nextjs
+
+# Ver logs de PostgreSQL
+docker compose logs -f postgres
+
+# Reiniciar un servicio específico
+docker compose restart nextjs
+
+# Detener todo
+docker compose down
+
+# Detener y eliminar volúmenes (borra la BD)
+docker compose down -v
+```
+
+---
+
+## Despliegue en Render
+
+El proyecto incluye un `render.yaml` como blueprint para despliegue en Render.com. El seed se ejecuta automáticamente solo si la tabla `User` está vacía (usando `scripts/seed-if-empty.js`).

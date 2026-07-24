@@ -59,5 +59,50 @@ CREDENCIALES DE LA APP:
 - Puerto Next.js: 3000
 
 ===========================================
+SESIÓN 2 - 23/07/2026
+===========================================
+
+TAREAS REALIZADAS:
+1. Se verificó que `context.txt` NO estaba en `.gitignore` → Se agregó
+2. Se leyó el archivo `context.txt` para recuperar el contexto
+3. Se explicó cómo conectarse a PostgreSQL con `psql` dentro de Docker
+4. Se explicaron comandos básicos de `psql`
+5. Se resolvió el problema de consultar tabla `User` sin comillas dobles
+6. Se analizó el proyecto completo y el flujo de datos
+7. Se identificó que el seed NO se ejecuta automáticamente con `docker compose up`
+8. Se actualizó el `README.md` con:
+   - Paso de seed manual documentado
+   - Credenciales por defecto
+   - Conexión a la base de datos
+   - Estructura completa del proyecto
+   - Todos los módulos de la aplicación
+   - Esquema de base de datos
+   - Comandos útiles
+
+FLUJO DE DATOS DEL PROYECTO:
+Frontend (Pages/Components) → Server Actions (app/actions/*) → Prisma Client (lib/prisma.ts) → PostgreSQL (Docker)
+
+MÓDULOS:
+1. Dashboard (/) - KPIs, gráficos, agenda del día
+2. Login (/login) - Autenticación con localStorage
+3. Pacientes (/pacientes) - CRUD y búsqueda
+4. Detalle Paciente (/pacientes/[id]) - Ficha y timeline
+5. Nueva Historia (/nueva-historia) - Formulario médico
+6. Atención (/atencion) - Kanban de citas
+7. Agenda (/agenda) - Calendario de citas
+8. Facturación (/facturacion) - Pagos y comprobantes
+9. Médicos (/medicos) - Gestión de médicos
+10. Ejecutivo (/ejecutivo) - Dashboard y reportes
+11. Configuración (/configuracion) - Usuarios, roles, permisos
+
+SEED:
+- Docker: Manual con `docker compose exec nextjs npm run seed`
+- Render: Automático con `scripts/seed-if-empty.js` (solo si User está vacío)
+
+ARCHIVOS MODIFICADOS EN ESTA SESIÓN:
+- .gitignore (agregado context.txt)
+- README.md (reescrito completamente)
+
+===========================================
 FIN DEL CONTEXTO
 ===========================================
