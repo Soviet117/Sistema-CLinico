@@ -46,7 +46,7 @@ const ROLE_PERMISSIONS_DEFAULTS: Record<string, string[]> = {
 }
 
 async function main() {
-  console.log('🗑️  Limpiando base de datos...')
+  console.log('Limpiando base de datos...')
   await prisma.factura.deleteMany()
   await prisma.historiaClinica.deleteMany()
   await prisma.cita.deleteMany()
@@ -58,7 +58,7 @@ async function main() {
   await prisma.rolePermission.deleteMany()
 
   // ─── 1. ESPECIALIDADES ───
-  console.log('🏥 Creando especialidades...')
+  console.log('Creando especialidades...')
   const espRecords: Record<string, { id: string; precioBase: number }> = {}
   for (const esp of ESPECIALIDADES) {
     const r = await prisma.especialidad.create({
@@ -66,10 +66,10 @@ async function main() {
     })
     espRecords[esp.nombre] = { id: r.id, precioBase: esp.precioBase }
   }
-  console.log(`✅ ${ESPECIALIDADES.length} especialidades creadas.`)
+  console.log(`${ESPECIALIDADES.length} especialidades creadas.`)
 
   // ─── 2. BOXES ───
-  console.log('🏗️  Creando boxes...')
+  console.log('Creando boxes...')
   const boxRecords: Record<string, { id: string; especialidad: string }> = {}
   for (const esp of ESPECIALIDADES) {
     const r = await prisma.box.create({
@@ -81,10 +81,10 @@ async function main() {
     })
     boxRecords[esp.boxNombre] = { id: r.id, especialidad: esp.nombre }
   }
-  console.log(`✅ ${ESPECIALIDADES.length} boxes creados.`)
+  console.log(`${ESPECIALIDADES.length} boxes creados.`)
 
   // ─── 3. USUARIOS ───
-  console.log('👤 Creando usuarios...')
+  console.log('Creando usuarios...')
 
   const adminPw = await hashPassword('admin123')
   const recepPw = await hashPassword('recepcion123')
@@ -117,10 +117,10 @@ async function main() {
     }
   })
 
-  console.log(`✅ 2 usuarios + 1 médico (Silvestre) creados.`)
+  console.log(`2 usuarios + 1 médico (Silvestre) creados.`)
 
   // ─── 4. ROLE PERMISSIONS ───
-  console.log('🔐 Creando permisos por rol...')
+  console.log('Creando permisos por rol...')
   for (const [rol, modules] of Object.entries(ROLE_PERMISSIONS_DEFAULTS)) {
     for (const moduleKey of modules) {
       await prisma.rolePermission.create({
@@ -132,10 +132,10 @@ async function main() {
       })
     }
   }
-  console.log(`✅ Permisos creados para ${Object.keys(ROLE_PERMISSIONS_DEFAULTS).length} roles.`)
+  console.log(`Permisos creados para ${Object.keys(ROLE_PERMISSIONS_DEFAULTS).length} roles.`)
 
   // ─── 5. PACIENTES ───
-  console.log('👥 Creando pacientes...')
+  console.log('Creando pacientes...')
   const crecimientoPacientes = [2, 3, 4, 5, 7, 9]
 
   const pacientesCreated: { id: string; nombre: string; apellido: string }[] = []
@@ -172,10 +172,10 @@ async function main() {
       pacientesCreated.push({ id: paciente.id, nombre, apellido })
     }
   }
-  console.log(`✅ ${pacientesCreated.length} pacientes creados.`)
+  console.log(`${pacientesCreated.length} pacientes creados.`)
 
   // ─── 6. CITAS Y FACTURAS ───
-  console.log('📅 Creando citas y facturas...')
+  console.log('Creando citas y facturas...')
 
   const ESTADOS_CITA: EstadoCita[] = ['COMPLETADA', 'COMPLETADA', 'COMPLETADA', 'COMPLETADA', 'COMPLETADA', 'PROGRAMADA', 'PROGRAMADA', 'PROGRAMADA', 'PENDIENTE_PAGO', 'CANCELADA']
 
@@ -259,14 +259,14 @@ async function main() {
     }
   }
 
-  console.log(`✅ ${totalCitas} citas creadas.`)
-  console.log(`💰 ${totalFacturas} facturas generadas.`)
-  console.log('✨ Seed completado exitosamente.')
+  console.log(`${totalCitas} citas creadas.`)
+  console.log(`${totalFacturas} facturas generadas.`)
+  console.log('Seed completado exitosamente.')
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error durante el seed:', e)
+    console.error('Error durante el seed:', e)
     process.exit(1)
   })
   .finally(async () => {
