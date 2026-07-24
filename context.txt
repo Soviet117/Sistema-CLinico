@@ -1,0 +1,63 @@
+===========================================
+CONTEXTO DE CONVERSACIÓN - 23/07/2026
+===========================================
+
+PROBLEMA INICIAL:
+El usuario tenía error al ejecutar `docker compose up`.
+
+CAUSA RAÍZ:
+El archivo `docker-compose.yml` usaba las variables de entorno:
+- DB_USER
+- DB_PASSWORD
+- DB_NAME
+
+Pero estas variables NO estaban definidas en el archivo `.env`, solo tenía:
+DATABASE_URL="postgresql://user_db:nosenose@host:5432/db_sistema_clinico"
+
+SOLUCIÓN APLICADA:
+1. Se agregaron las variables faltantes a `.env`:
+   DB_USER=user_db
+   DB_PASSWORD=nosenose
+   DB_NAME=db_sistema_clinico
+
+2. Se actualizó `.env.example` con valores placeholder:
+   DB_USER=tu_usuario
+   DB_PASSWORD=tu_password
+   DB_NAME=db_sistema_clinico
+
+ARCHIVOS MODIFICADOS:
+- /home/soviet117/Projects/sistema-clinico/.env
+- /home/soviet117/Projects/sistema-clinico/.env.example
+
+VERIFICACIÓN ESTÁTICA REALIZADA:
+✅ docker-compose.yml - Correcto, usa las 3 variables para DB y healthcheck
+✅ Dockerfile - Correcto, multi-stage build (builder + runner)
+✅ entrypoint.sh - Correcto: prisma generate → prisma migrate deploy → npm run dev
+✅ prisma/schema.prisma - Correcto, 267 líneas, modelos coherentes
+✅ prisma/seed.ts - Correcto, crea datos en orden de dependencia
+✅ lib/password.ts - Correcto, funciones hashPassword y verifyPassword
+✅ 15 migraciones - Orden cronológico correcto, consistentes con schema
+✅ next.config.ts - output: "standalone", serverExternalPackages
+
+PROBLEMA DETECTADO (NO BLOQUEANTE):
+El usuario no tiene acceso al socket de Docker a pesar de estar en el grupo `docker`.
+SOLUCIÓN: Cerrar sesión y volver a entrar (o ejecutar `newgrp docker`).
+
+PASOS PARA CONTINUAR DESPUÉS DEL REINICIO:
+1. Cerrar sesión y volver a entrar al sistema (para activar grupo docker)
+2. Ejecutar:
+   docker compose up -d postgres
+   docker compose exec nextjs npx prisma migrate deploy
+   docker compose exec nextjs npx prisma db seed
+   docker compose up
+
+CREDENCIALES DE LA APP:
+- Admin: silvestre@clinica.com / admin123
+- Recepcionista: recepcion@clinica.com / recepcion123
+- Base de datos: db_sistema_clinico
+- Puerto PostgreSQL: 5432
+- Puerto Next.js: 3000
+
+===========================================
+FIN DEL CONTEXTO
+===========================================
