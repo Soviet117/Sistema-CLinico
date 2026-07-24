@@ -47,9 +47,15 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     updatedAt: c.updatedAt.toISOString(),
   }));
 
+  const patientSerialized = {
+    ...patient,
+    historiasClinicas: historiasClinicasSerializadas,
+    citas: citasSerializadas,
+  };
+
   return (
     <>
-      <PatientDetailClient patient={patient} />
+      <PatientDetailClient patient={patientSerialized} />
       <PatientTabsClient historias={historiasClinicasSerializadas} citas={citasSerializadas} patientName={`${patient.nombre} ${patient.apellido}`} />
     </>
   );

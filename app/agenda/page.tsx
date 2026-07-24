@@ -58,6 +58,11 @@ export default async function AgendaPage() {
     } : null,
   }));
 
+  const especialidadesSerialized = especialidades.map(esp => ({
+    ...esp,
+    precioBase: Number(esp.precioBase),
+  }));
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div className="header-title-container" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
@@ -68,7 +73,7 @@ export default async function AgendaPage() {
       <AgendaCalendario 
         citasIniciales={citasSerialized}
         medicos={medicos}
-        especialidades={especialidades}
+        especialidades={especialidadesSerialized}
         pacientes={pacientes}
       />
     </div>
